@@ -294,7 +294,7 @@ export async function buildBottle(product, sizeIndex = 0) {
     cap: { position: new THREE.Vector3(0, c.y1 - 1.1, c.r + 0.05), normal: new THREE.Vector3(0, 0.2, 1).normalize(), part: 'cap' },
     neck: { ...surfaceAnchor(radiusAt, (shape.neckLabel.y0 + shape.neckLabel.y1) / 2, 0.25, 0.08), part: 'labels' },
     emboss: { ...surfaceAnchor(radiusAt, (shape.emboss.y0 + shape.emboss.y1) / 2, 0.25, 0.06), part: 'glass' },
-    label: { ...surfaceAnchor(radiusAt, (shape.label.y0 + shape.label.y1) / 2 + 1.5, 0.25, 0.08), part: 'labels' },
+    label: { ...surfaceAnchor(radiusAt, shape.label.y1 - 1.2, 0.31, 0.08), part: 'labels' },
     liquid: { ...surfaceAnchor(radiusAt, 15.2, 0.125, 0.05), part: 'liquid' },
     base: { ...surfaceAnchor(radiusAt, 0.55, 0.25, 0.05), part: 'glass' },
   };
