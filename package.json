@@ -1,0 +1,26 @@
+{
+  "name": "vision-showroom-3d",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Showroom virtual 3D: produtos em 360°, composição, história e harmonização.",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "build:single": "vite build --mode single",
+    "preview": "vite preview --host"
+  },
+  "dependencies": {
+    "@fontsource/cinzel": "^5.3.0",
+    "@fontsource/great-vibes": "^5.3.0",
+    "@fontsource/inter": "^5.3.0",
+    "@fontsource/old-standard-tt": "^5.3.0",
+    "@fontsource/playfair-display": "^5.3.0",
+    "@fontsource/rye": "^5.3.0",
+    "three": "^0.187.0"
+  },
+  "devDependencies": {
+    "vite": "^8.0.0",
+    "vite-plugin-singlefile": "^2.3.4"
+  }
+}
