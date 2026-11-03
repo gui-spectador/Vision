@@ -71,7 +71,7 @@ export function createPanel(el, handlers) {
     el.head.innerHTML = `
       <span class="eyebrow">${esc(p.brand)}${p.badge ? ` <span class="badge">${esc(p.badge)}</span>` : ''}</span>
       <h2>${esc(p.short)}</h2>
-      <p>${esc(p.category)} · ${p.abv}% vol · ${esc(s.label)}</p>
+      <p>${esc(p.categoryShort ?? p.category)} · ${p.abv}% vol · ${esc(s.label)}${s.price ? ` · ${esc(s.price)}` : ''}</p>
       <div class="mobile-only">${sizeSwitch(p)}<span class="pill">${esc(p.origin)}</span></div>`;
   }
 
@@ -89,17 +89,22 @@ export function createPanel(el, handlers) {
     };
 
     if (state.tab === 'overview') {
-      add(`<p class="lead">${esc(p.description)}</p>`);
+      add(`<p class="lead">${esc(p.description)}</p>${p.quote ? `<blockquote class="quote"><p>“${esc(p.quote.text)}”</p><cite>${esc(p.quote.author)}</cite></blockquote>` : ''}`);
+      const wide = 'style="grid-column: span 2"';
       add(`<h4>Ficha técnica</h4>
         <div class="spec-grid">
           <div class="spec"><span>Teor alcoólico</span><strong>${p.abv}% vol (${p.proof} proof)</strong></div>
           <div class="spec"><span>Capacidade</span><strong>${esc(s.label)}</strong></div>
-          <div class="spec"><span>Categoria</span><strong>${esc(p.category)}</strong></div>
-          <div class="spec"><span>Origem</span><strong>${esc(p.origin)}</strong></div>
-          <div class="spec"><span>Lançamento</span><strong>${esc(p.launched)}</strong></div>
+          ${s.price ? `<div class="spec"><span>Preço sugerido (BR)</span><strong>${esc(s.price)}</strong></div>` : ''}
+          <div class="spec" ${s.price ? '' : wide}><span>Origem</span><strong>${esc(p.origin)}</strong></div>
+          <div class="spec" ${wide}><span>Categoria</span><strong>${esc(p.category)}</strong></div>
+          <div class="spec" ${wide}><span>Lançamento</span><strong>${esc(p.launched)}</strong></div>
           <div class="spec"><span>Temperatura ideal</span><strong>${esc(p.temperature)}</strong></div>
-          <div class="spec" style="grid-column: span 2"><span>Copo</span><strong>${esc(p.glass)}</strong></div>
-        </div>`);
+          <div class="spec"><span>Copo</span><strong>${esc(p.glass)}</strong></div>
+          ${p.closure ? `<div class="spec"><span>Fechamento</span><strong>${esc(p.closure)}</strong></div>` : ''}
+          ${p.availability ? `<div class="spec" ${wide}><span>Disponibilidade</span><strong>${esc(p.availability)}</strong></div>` : ''}
+        </div>
+        ${p.priceNote && s.price ? `<p class="note">${esc(p.priceNote)}</p>` : ''}`);
       const sec = add(`<h4>Explore a garrafa em 3D</h4><div class="explore-list">${HOTSPOT_ORDER.map(
         (k, i) => `<button class="explore-item" data-hotspot="${k}"><span class="num">${i + 1}</span><span><strong>${esc(p.hotspots[k].title)}</strong><small>Toque para aproximar</small></span></button>`,
       ).join('')}</div>`);

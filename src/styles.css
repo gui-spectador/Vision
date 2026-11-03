@@ -368,6 +368,52 @@ button {
   font-size: 15px !important;
 }
 
+.quote {
+  margin: 16px 0 0;
+  padding: 2px 0 2px 16px;
+  border-left: 2px solid var(--accent);
+}
+.quote p {
+  font-family: var(--serif);
+  font-style: italic;
+  color: var(--text) !important;
+  font-size: 15px !important;
+  margin-bottom: 6px !important;
+}
+.quote cite {
+  font-style: normal;
+  font-size: 12px;
+  color: var(--dim);
+}
+.app.solo .shelf {
+  display: none;
+}
+.app.clean .topbar,
+.app.clean .hero,
+.app.clean .panel,
+.app.clean .dock,
+.app.clean .shelf,
+.app.clean .hotspots,
+.app.clean .hint,
+.app.clean .hotspot-card {
+  display: none !important;
+}
+.app.clean .legal {
+  top: auto !important;
+  bottom: 14px !important;
+  left: 50% !important;
+  transform: translateX(-50%);
+  font-size: 11px;
+}
+@media (min-width: 901px) {
+  .app.solo .dock {
+    bottom: 30px;
+  }
+  .app.solo .hint {
+    bottom: 96px;
+  }
+}
+
 .spec-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1475,6 +1521,9 @@ button {
     top: auto !important;
     bottom: calc(var(--peek) + env(safe-area-inset-bottom) + 96px);
     width: auto;
+  }
+  .app.solo .hotspot-card {
+    bottom: calc(var(--peek) + env(safe-area-inset-bottom) + 12px);
   }
   .hotspot .tip {
     display: none;

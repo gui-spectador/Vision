@@ -8,7 +8,8 @@
     "dev": "vite --host",
     "build": "vite build",
     "build:single": "vite build --mode single",
-    "preview": "vite preview --host"
+    "preview": "vite preview --host",
+    "build:blackberry": "VITE_SOLO=jd-blackberry vite build --mode single --outDir dist-blackberry"
   },
   "dependencies": {
     "@fontsource/cinzel": "^5.3.0",

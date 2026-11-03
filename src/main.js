@@ -14,12 +14,20 @@ import './styles.css';
 import { Stage, LIGHTING } from './three/stage.js';
 import { buildBottle } from './three/bottle.js';
 import { buildProps, disposeObject } from './three/props.js';
-import { PRODUCTS } from './data/products.js';
+import { PRODUCTS as ALL_PRODUCTS } from './data/products.js';
 import { createPanel } from './ui/panel.js';
 import { createHotspots } from './ui/hotspots.js';
 import { arSupported, openAR } from './three/ar.js';
 
 const $ = (s) => document.querySelector(s);
+
+// Modo produto único: ?produto=jd-blackberry ou build com VITE_SOLO=jd-blackberry
+const params = new URLSearchParams(location.search);
+const SOLO = params.get('produto') || import.meta.env.VITE_SOLO || '';
+const PRODUCTS = ALL_PRODUCTS.some((p) => p.id === SOLO) ? ALL_PRODUCTS.filter((p) => p.id === SOLO) : ALL_PRODUCTS;
+const IS_SOLO = PRODUCTS.length === 1;
+if (IS_SOLO) document.querySelector('#app').classList.add('solo');
+if (params.has('limpo')) document.querySelector('#app').classList.add('clean');
 const isMobile = () => matchMedia('(max-width: 900px)').matches;
 const storage = {
   get(k) {
@@ -117,7 +125,8 @@ function renderHero(p, sizeIndex) {
     <div class="facts-inline">
       <span class="pill">${p.abv}% vol</span>
       <span class="pill">${s.label}</span>
-      <span class="pill">${p.category}</span>
+      <span class="pill">${p.categoryShort ?? p.category}</span>
+      ${s.price ? `<span class="pill" title="${p.priceNote ?? ''}">${s.price}</span>` : ''}
     </div>
     ${p.sizes.length > 1 ? `<div class="size-switch" role="radiogroup" aria-label="Capacidade"><span class="label">Tamanho</span>${p.sizes
       .map((z, i) => `<button data-size="${i}" class="${i === sizeIndex ? 'active' : ''}">${z.label}</button>`)
@@ -151,11 +160,16 @@ function layoutInsets(stage) {
   const panel = $('#panel');
   if (isMobile()) {
     const peek = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--peek')) || 176;
-    stage.setInsets({ left: 0, right: 74, top: 64, bottom: peek + 100 });
+    if (document.querySelector('#app').classList.contains('clean')) stage.setInsets({ left: 0, right: 0, top: 0, bottom: 0 });
+    else stage.setInsets({ left: 0, right: 74, top: 64, bottom: peek + (IS_SOLO ? 14 : 100) });
   } else {
+    if (document.querySelector('#app').classList.contains('clean')) {
+      stage.setInsets({ left: 0, right: 0, top: 0, bottom: 0 });
+      return;
+    }
     const r = panel.getBoundingClientRect();
     const hero = $('#hero').getBoundingClientRect();
-    stage.setInsets({ left: Math.min(hero.right, window.innerWidth * 0.3) * 0.7, right: window.innerWidth - r.left, top: 70, bottom: 150 });
+    stage.setInsets({ left: Math.min(hero.right, window.innerWidth * 0.3) * 0.7, right: window.innerWidth - r.left, top: 70, bottom: IS_SOLO ? 110 : 150 });
   }
 }
 
@@ -213,6 +227,13 @@ async function main() {
     calloutLayer: $('#callouts'),
     card: $('#hotspot-card'),
     stage,
+    // no celular o cartão fica embaixo: sobe o ponto focado para a área livre acima dele
+    onOpen: () => {
+      if (!isMobile()) return;
+      const peek = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--peek')) || 176;
+      stage.setInsets({ bottom: peek + $('#hotspot-card').offsetHeight + (IS_SOLO ? 30 : 110) });
+    },
+    onClose: () => layoutInsets(stage),
   });
 
   const dock = $('#dock');

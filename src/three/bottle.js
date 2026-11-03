@@ -18,9 +18,9 @@ export const SHAPES = {
   tennesseeSquare: {
     referenceMl: 1000,
     profile: [
-      [0.0, 0.0, 5.6], [0.0, 3.7, 5.6], [0.07, 4.18, 5.6], [0.3, 4.43, 5.6], [0.75, 4.5, 5.6],
-      [6.0, 4.5, 5.6], [12.0, 4.5, 5.6], [16.2, 4.5, 5.6],
-      [17.1, 4.42, 5.3], [18.0, 4.12, 4.5], [18.8, 3.56, 3.5], [19.5, 2.78, 2.7], [20.1, 2.1, 2.2],
+      [0.0, 0.0, 18], [0.0, 3.75, 18], [0.07, 4.2, 18], [0.3, 4.44, 18], [0.75, 4.5, 18],
+      [6.0, 4.5, 18], [12.0, 4.5, 18], [16.2, 4.5, 18],
+      [17.1, 4.42, 13], [18.0, 4.1, 7], [18.8, 3.54, 4.2], [19.5, 2.78, 2.9], [20.1, 2.1, 2.25],
       [20.7, 1.74, 2], [21.3, 1.64, 2], [21.9, 1.74, 2], [22.5, 1.64, 2], [23.6, 1.56, 2],
       [25.5, 1.52, 2], [25.75, 1.66, 2], [26.3, 1.66, 2], [26.5, 1.47, 2], [27.7, 1.43, 2],
       [27.95, 1.32, 2], [28.0, 1.05, 2],
@@ -28,7 +28,7 @@ export const SHAPES = {
     wall: 0.32,
     baseTop: 1.15,
     fill: 24.3,
-    label: { y0: 3.3, y1: 13.8, width: 8.05 },
+    label: { y0: 3.3, y1: 13.8, width: 7.7 },
     backLabel: { y0: 4.6, y1: 11.4, width: 6.0 },
     neckLabel: { y0: 22.55, y1: 25.85, arc: 0.84 },
     cap: { y0: 25.9, y1: 28.35, r: 1.82 },
@@ -270,6 +270,21 @@ export async function buildBottle(product, sizeIndex = 0) {
   capTop.rotation.x = -Math.PI / 2;
   capTop.position.y = c.y1 + 0.004;
   parts.cap.add(capTop);
+
+  // Anel metálico no topo da tampa (quando existir)
+  if (product.cap?.ring) {
+    const ringRings = [
+      { y: c.y1 - 0.42, r: c.r + 0.045, n: 2 },
+      { y: c.y1 - 0.12, r: c.r + 0.045, n: 2 },
+      { y: c.y1 - 0.03, r: c.r - 0.06, n: 2 },
+      { y: c.y1, r: c.r - 0.3, n: 2 },
+    ];
+    const ring = new THREE.Mesh(
+      superLathe(ringRings, 160, { height: H }),
+      new THREE.MeshPhysicalMaterial({ color: product.cap.ring, metalness: 1, roughness: 0.26, clearcoat: 0.6 }),
+    );
+    parts.cap.add(ring);
+  }
 
   // Faixa metálica da tampa (quando existir)
   if (product.cap?.band) {

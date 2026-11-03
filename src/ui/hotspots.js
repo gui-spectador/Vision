@@ -72,8 +72,8 @@ export function createHotspots({ layer, calloutLayer, card, stage, onOpen, onClo
     active = null;
     card.hidden = true;
     Object.values(pins).forEach((p) => p.classList.remove('active'));
-    if (resetView) stage.resetView();
     onClose?.();
+    if (resetView) stage.resetView();
   }
 
   function setProduct(p, s) {

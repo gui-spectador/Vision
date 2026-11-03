@@ -6,13 +6,32 @@ import * as THREE from 'three';
  * Toda garrafa é descrita por um perfil (altura y, raio r, "quadratura" n) em centímetros.
  * Cada anel do perfil é uma superelipse |x/r|^n + |z/r|^n = 1:
  *   n = 2   -> seção redonda (gargalo, garrafas de vinho)
- *   n = 5~7 -> seção quadrada com cantos arredondados (garrafa quadrada de Tennessee whiskey)
+ *   n = 12~20 -> seção quadrada de faces planas e cantos chanfrados (garrafa quadrada de Tennessee whiskey)
  * Variar n ao longo da altura permite ombros que passam de quadrado para redondo.
  */
 
 const sectionCache = new Map();
 
-const quantizeN = (n) => Math.round(Math.max(2, n) * 20) / 20;
+const quantizeN = (n) => (n < 6 ? Math.round(Math.max(2, n) * 20) / 20 : Math.round(n * 4) / 4);
+
+// Garrafas quadradas premium têm cantos chanfrados (pequenas facetas verticais).
+// O chanfro é o plano |x| + |z| = CHAMFER_K; só atua em seções quase quadradas
+// (em seções redondas, |x| + |z| <= √2 < CHAMFER_K, então nada é cortado).
+const CHAMFER_K = 1.84;
+
+function smin(a, b, k) {
+  const h = Math.max(k - Math.abs(a - b), 0) / k;
+  return Math.min(a, b) - h * h * k * 0.25;
+}
+
+/** Raio polar da seção unitária: superelipse de expoente n, com cantos chanfrados. */
+function polarRadius(theta, n) {
+  const c = Math.abs(Math.cos(theta));
+  const s = Math.abs(Math.sin(theta));
+  const rs = n <= 2.0001 ? 1 : (c ** n + s ** n) ** (-1 / n);
+  const rd = CHAMFER_K / (c + s);
+  return smin(rs, rd, 0.035);
+}
 
 /** Seção transversal unitária com pontos espaçados igualmente pelo comprimento de arco. */
 export function crossSection(nIn, segments) {
@@ -22,16 +41,14 @@ export function crossSection(nIn, segments) {
   if (cached) return cached;
 
   const fine = 4096;
-  const e = 2 / n;
   const px = new Float64Array(fine + 1);
   const pz = new Float64Array(fine + 1);
   const cum = new Float64Array(fine + 1);
   for (let i = 0; i <= fine; i++) {
     const t = (i / fine) * Math.PI * 2;
-    const c = Math.cos(t);
-    const s = Math.sin(t);
-    px[i] = Math.sign(c) * Math.abs(c) ** e;
-    pz[i] = Math.sign(s) * Math.abs(s) ** e;
+    const r = polarRadius(t, n);
+    px[i] = Math.cos(t) * r;
+    pz[i] = Math.sin(t) * r;
     if (i > 0) cum[i] = cum[i - 1] + Math.hypot(px[i] - px[i - 1], pz[i] - pz[i - 1]);
   }
   const total = cum[fine];

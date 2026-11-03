@@ -38,7 +38,13 @@ npm install
 npm run dev          # http://localhost:5173 (use --host para abrir no celular na mesma rede)
 npm run build        # site estático em dist/ (Netlify, Vercel, GitHub Pages, S3…)
 npm run build:single # um único arquivo dist-single/index.html, funciona offline
+npm run build:blackberry # só o Tennessee Blackberry, em um único arquivo (dist-blackberry/)
 ```
+
+Modos por URL:
+
+- `?produto=jd-blackberry` — experiência dedicada a um produto (sem a prateleira, carrega mais rápido)
+- `?limpo` — esconde a interface (útil para gravar vídeos e apresentações)
 
 ### Publicar no GitHub Pages
 

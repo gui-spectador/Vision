@@ -511,7 +511,7 @@ export class Stage {
     if (!b) return;
     const h = b.heightWorld;
     const cy = h * 0.47;
-    const dist = this.fitDistance(h * (this.mobile ? 1.5 : 1.4), Math.max(b.widthWorld * 3.0, h * 0.62));
+    const dist = this.fitDistance(h * (this.mobile ? 1.42 : 1.4), Math.max(b.widthWorld * 3.0, h * 0.62));
     const elev = 0.17;
     const target = new THREE.Vector3(0, cy, 0);
     const pos = new THREE.Vector3(0, cy + Math.sin(elev) * dist, Math.cos(elev) * dist);
@@ -694,6 +694,14 @@ export class Stage {
     const ns = sideP.project(camera);
     u.uCoreNdc.value.set(nc.x, nc.y);
     u.uCoreHalf.value.set(Math.max(0.002, Math.abs(ns.x - nc.x)), Math.max(0.002, Math.abs(nt.y - nc.y)));
+  }
+
+  /** Renderiza um quadro imediatamente (usado para gerar vídeos/imagens). */
+  renderOnce() {
+    this.controls.update();
+    this.themeUniforms.uGlowDir.value.copy(this.controls.target).sub(this.camera.position).normalize();
+    this.#updateCore(this.camera);
+    this.renderer.render(this.scene, this.camera);
   }
 
   /* ---------------- utilidades ---------------- */
