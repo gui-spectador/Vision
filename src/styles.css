@@ -308,17 +308,38 @@ button {
   overflow-x: auto;
   scrollbar-width: none;
   border-bottom: 1px solid var(--line);
-  -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
-  mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
+  cursor: grab;
+  user-select: none;
+  overscroll-behavior-x: contain;
+}
+.tabs.dragging {
+  cursor: grabbing;
+}
+.tabs.dragging .tab {
+  pointer-events: none;
+}
+/* esmaecimento só no lado que tem mais abas escondidas */
+.tabs.more-right {
+  -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 32px), transparent);
+  mask-image: linear-gradient(90deg, #000 calc(100% - 32px), transparent);
+}
+.tabs.more-left {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 32px);
+  mask-image: linear-gradient(90deg, transparent, #000 32px);
+}
+.tabs.more-left.more-right {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 32px, #000 calc(100% - 32px), transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 32px, #000 calc(100% - 32px), transparent);
 }
 .tabs::-webkit-scrollbar {
   display: none;
 }
 .tab {
-  flex: none;
-  padding: 8px 9px;
+  flex: 1 0 auto;
+  padding: 8px 7px;
   border-radius: 10px;
-  font-size: 12.5px;
+  font-size: 12px;
+  white-space: nowrap;
   color: var(--muted);
   transition: background 0.25s, color 0.25s;
 }

@@ -105,6 +105,156 @@ function embossNormalMap(text) {
   return tex;
 }
 
+/*
+ * Condensação de garrafa gelada: névoa fina + gotas (1–4 mm) + alguns escorridos.
+ * Gera um mapa de altura em canvas, converte em mapa de normais e em máscara de opacidade.
+ * O ladrilho cobre ~5,5 cm de garrafa e se repete sem emenda.
+ */
+let condensationCache = null;
+function condensationTextures() {
+  if (condensationCache) return condensationCache;
+  const S = 1024;
+  const mk = () => {
+    const c = document.createElement('canvas');
+    c.width = c.height = S;
+    const x = c.getContext('2d');
+    x.fillStyle = '#000';
+    x.fillRect(0, 0, S, S);
+    return [c, x];
+  };
+  const [hc, h] = mk();
+  const [ac, a] = mk();
+  const [gc, gl] = mk();
+  const glint = (x, y, r) => {
+    for (const ox of [-S, 0, S]) for (const oy of [-S, 0, S]) {
+      const cx = x - r * 0.34 + ox;
+      const cy = y - r * 0.38 + oy;
+      const g = gl.createRadialGradient(cx, cy, 0, cx, cy, r * 0.32);
+      g.addColorStop(0, 'rgba(255,255,255,1)');
+      g.addColorStop(0.45, 'rgba(255,255,255,0.55)');
+      g.addColorStop(1, 'rgba(255,255,255,0)');
+      gl.fillStyle = g;
+      gl.beginPath();
+      gl.arc(cx, cy, r * 0.32, 0, Math.PI * 2);
+      gl.fill();
+      a.fillStyle = 'rgba(255,255,255,0.6)';
+      a.beginPath();
+      a.arc(cx, cy, r * 0.16, 0, Math.PI * 2);
+      a.fill();
+    }
+  };
+  let seed = 17;
+  const rnd = () => {
+    seed = (seed * 16807) % 2147483647;
+    return seed / 2147483647;
+  };
+  const dome = (ctx, x, y, r, peak = 1) => {
+    for (const ox of [-S, 0, S]) {
+      for (const oy of [-S, 0, S]) {
+        const cx = x + ox;
+        const cy = y + oy;
+        if (cx + r < 0 || cx - r > S || cy + r < 0 || cy - r > S) continue;
+        const g = ctx.createRadialGradient(cx - r * 0.15, cy - r * 0.15, 0, cx, cy, r);
+        const v = Math.round(255 * peak);
+        g.addColorStop(0, `rgb(${v},${v},${v})`);
+        g.addColorStop(0.55, `rgb(${Math.round(v * 0.82)},${Math.round(v * 0.82)},${Math.round(v * 0.82)})`);
+        g.addColorStop(0.85, `rgb(${Math.round(v * 0.45)},${Math.round(v * 0.45)},${Math.round(v * 0.45)})`);
+        g.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  };
+  const disc = (ctx, x, y, r, alpha) => {
+    ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+    for (const ox of [-S, 0, S]) for (const oy of [-S, 0, S]) {
+      ctx.beginPath();
+      ctx.arc(x + ox, y + oy, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  };
+  // névoa: micro gotas
+  a.fillStyle = 'rgba(255,255,255,0.05)';
+  a.fillRect(0, 0, S, S);
+  for (let i = 0; i < 9000; i++) {
+    const x = rnd() * S;
+    const y = rnd() * S;
+    const r = 0.8 + rnd() * 2.2;
+    dome(h, x, y, r, 0.55);
+    disc(a, x, y, r, 0.16);
+  }
+  // gotas maiores
+  for (let i = 0; i < 380; i++) {
+    const x = rnd() * S;
+    const y = rnd() * S;
+    const r = 4 + rnd() ** 2.6 * 30;
+    dome(h, x, y, r * 1.02, 1);
+    disc(a, x, y, r, 0.34);
+    if (r > 6) glint(x, y, r);
+  }
+  // escorridos: trilha limpa (sem névoa) com gota na ponta
+  for (let i = 0; i < 12; i++) {
+    let x = rnd() * S;
+    let y = rnd() * S * 0.7;
+    const len = 80 + rnd() * 320;
+    const w = 6 + rnd() * 8;
+    a.save();
+    a.globalCompositeOperation = 'destination-out';
+    a.strokeStyle = 'rgba(0,0,0,0.85)';
+    a.lineWidth = w * 1.6;
+    a.lineCap = 'round';
+    a.beginPath();
+    a.moveTo(x, y);
+    const steps = 12;
+    for (let k = 1; k <= steps; k++) a.lineTo(x + Math.sin(k * 0.9 + i) * 3, y + (len * k) / steps);
+    a.stroke();
+    a.restore();
+    a.strokeStyle = 'rgba(255,255,255,0.28)';
+    a.lineWidth = w * 0.5;
+    a.beginPath();
+    a.moveTo(x, y);
+    for (let k = 1; k <= steps; k++) a.lineTo(x + Math.sin(k * 0.9 + i) * 3, y + (len * k) / steps);
+    a.stroke();
+    h.strokeStyle = 'rgba(160,160,160,0.6)';
+    h.lineWidth = w * 0.5;
+    h.stroke();
+    y += len;
+    dome(h, x, y, w * 1.4, 1);
+    disc(a, x, y, w * 1.35, 0.4);
+    glint(x, y, w * 1.35);
+  }
+  // mapa de normais
+  const src = h.getImageData(0, 0, S, S).data;
+  const [nc, n] = mk();
+  const out = n.createImageData(S, S);
+  const H = (x, y) => src[(((y + S) % S) * S + ((x + S) % S)) * 4] / 255;
+  const k = 3.2;
+  for (let y = 0; y < S; y++) {
+    for (let x = 0; x < S; x++) {
+      const dx = (H(x + 1, y) - H(x - 1, y)) * k;
+      const dy = (H(x, y + 1) - H(x, y - 1)) * k;
+      const len = Math.hypot(dx, dy, 1);
+      const i = (y * S + x) * 4;
+      out.data[i] = (-dx / len * 0.5 + 0.5) * 255;
+      out.data[i + 1] = (dy / len * 0.5 + 0.5) * 255;
+      out.data[i + 2] = (1 / len * 0.5 + 0.5) * 255;
+      out.data[i + 3] = 255;
+    }
+  }
+  n.putImageData(out, 0, 0);
+  const tex = (c) => {
+    const t = new THREE.CanvasTexture(c);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(6, 5);
+    t.anisotropy = 8;
+    return t;
+  };
+  condensationCache = { normal: tex(nc), alpha: tex(ac), glint: tex(gc) };
+  return condensationCache;
+}
+
 function labelMaterials(tex, paperBack) {
   const front = new THREE.MeshPhysicalMaterial({
     map: tex.map,
@@ -223,8 +373,85 @@ export async function buildBottle(product, sizeIndex = 0) {
     envMapIntensity: 0.8,
     dispersion: 0.25,
   });
+  // Comportamento de fluido na vista explodida: ondulação do volume, superfície livre,
+  // reflexos que escorrem e bolhas subindo. Desligado (0) com a garrafa montada.
+  liquidMat.clearcoat = 0.001;
+  liquidMat.clearcoatRoughness = 0.02;
+  const fluid = {
+    uTime: { value: 0 },
+    uFluid: { value: 0 },
+    uAmp: { value: 0 },
+    uY0: { value: shape.baseTop },
+    uY1: { value: shape.fill },
+  };
+  liquidMat.onBeforeCompile = (shader) => {
+    Object.assign(shader.uniforms, fluid);
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', `#include <common>
+        uniform float uTime; uniform float uFluid; uniform float uAmp; uniform float uY0; uniform float uY1;
+        varying vec3 vFluidPos;`)
+      .replace('#include <begin_vertex>', `#include <begin_vertex>
+        vFluidPos = position;
+        if (uAmp > 0.0005) {
+          float hN = clamp((position.y - uY0) / (uY1 - uY0), 0.0, 1.0);
+          float rl = length(position.xz);
+          vec2 dir = rl > 1e-4 ? position.xz / rl : vec2(0.0);
+          float w1 = sin(position.y * 0.55 - uTime * 2.4 + position.x * 0.35) * 0.16;
+          float w2 = sin(position.x * 1.1 + uTime * 3.3) * cos(position.z * 0.9 - uTime * 2.7) * 0.1;
+          float w3 = sin(position.y * 1.7 + uTime * 4.1 + position.z * 1.3) * 0.05;
+          transformed.xz += dir * (w1 + w2 + w3) * uAmp * (0.35 + 0.65 * hN);
+          float topMask = smoothstep(uY1 - 0.35, uY1 + 0.01, position.y);
+          transformed.y += topMask * uAmp * (sin(rl * 3.2 - uTime * 5.5) * 0.1 + position.x * 0.06 * sin(uTime * 1.6));
+        }`);
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', `#include <common>
+        uniform float uTime; uniform float uFluid; varying vec3 vFluidPos;`)
+      .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+        if (uFluid > 0.0005) {
+          vec3 q = vFluidPos;
+          vec3 pert = vec3(
+            sin(q.y * 1.6 + uTime * 2.1) * cos(q.x * 1.3 - uTime * 1.5),
+            sin(q.x * 1.9 - uTime * 1.2) * 0.5,
+            cos(q.y * 1.4 - uTime * 1.8) * sin(q.z * 1.5 + uTime * 1.1));
+          normal = normalize(normal + uFluid * 0.18 * pert);
+        }`);
+  };
   const liquid = new THREE.Mesh(superLathe(liquidRings, 192, { height: H }), liquidMat);
   parts.liquid.add(liquid);
+
+  // bolhas
+  const BUBBLES = 170;
+  // opacas: entram no passe de transmissão e aparecem refratadas através do líquido
+  const bubbleMat = new THREE.MeshPhysicalMaterial({
+    color: '#fff3e2',
+    emissive: new THREE.Color('#5a3a1c'),
+    roughness: 0.04,
+    clearcoat: 1,
+    envMapIntensity: 3,
+  });
+  const bubbles = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 10, 8), bubbleMat, BUBBLES);
+  bubbles.frustumCulled = false;
+  bubbles.visible = false;
+  parts.liquid.add(bubbles);
+  let bseed = 99;
+  const brnd = () => {
+    bseed = (bseed * 16807) % 2147483647;
+    return bseed / 2147483647;
+  };
+  const bubble = Array.from({ length: BUBBLES }, () => ({}));
+  const spawn = (b, anywhere) => {
+    b.y = anywhere ? shape.baseTop + 0.3 + brnd() * (shape.fill - shape.baseTop - 0.8) : shape.baseTop + 0.3;
+    const R = Math.max(0.2, radiusAt(b.y).r - shape.wall - 0.35);
+    b.x = (brnd() * 2 - 1) * R * 0.85;
+    b.z = (brnd() * 2 - 1) * R * 0.85;
+    b.speed = 1.2 + brnd() * 2.8;
+    b.size = 0.04 + brnd() ** 2 * 0.14;
+    b.phase = brnd() * 6.28;
+  };
+  bubble.forEach((b) => spawn(b, true));
+  const bm = new THREE.Matrix4();
+  let explodeStart = -10;
+  let wasExploded = false;
 
   /* Rótulos */
   const volumeText = size.labelText;
@@ -318,6 +545,32 @@ export async function buildBottle(product, sizeIndex = 0) {
     parts.cap.add(band);
   }
 
+  /* Condensação (garrafa gelada): camada fina por fora do vidro e dos rótulos, até a tampa */
+  const condRings = rings.filter((p) => p.y <= shape.cap.y0 + 0.05).map((p) => ({ ...p, r: p.r > 0 ? p.r + 0.06 : 0 }));
+  const cond = condensationTextures();
+  const condMat = new THREE.MeshPhysicalMaterial({
+    color: '#3a4247',
+    emissive: new THREE.Color('#ffffff'),
+    emissiveMap: cond.glint,
+    emissiveIntensity: 0.85,
+    roughness: 0.08,
+    metalness: 0,
+    ior: 1.33,
+    specularIntensity: 1,
+    clearcoat: 1,
+    clearcoatRoughness: 0.03,
+    envMapIntensity: 5,
+    normalMap: cond.normal,
+    normalScale: new THREE.Vector2(2.2, 2.2),
+    alphaMap: cond.alpha,
+    transparent: true,
+    depthWrite: false,
+  });
+  const condensation = new THREE.Mesh(superLathe(condRings, 192, { height: H }), condMat);
+  condensation.renderOrder = 11;
+  condensation.visible = false;
+  parts.glass.add(condensation);
+
   /* Escala para a capacidade selecionada */
   const k = Math.cbrt(size.ml / shape.referenceMl);
   const SCENE = 0.1; // 1 unidade = 10 cm
@@ -350,7 +603,10 @@ export async function buildBottle(product, sizeIndex = 0) {
       mats.forEach((m) => {
         disposables.push(m);
         ['map', 'roughnessMap', 'bumpMap', 'normalMap'].forEach((key) => {
-          if (m[key] && m[key] !== emboss) disposables.push(m[key]);
+          if (m[key] && m[key] !== emboss && m[key] !== cond.normal) disposables.push(m[key]);
+        });
+        ['alphaMap', 'emissiveMap'].forEach((key) => {
+          if (m[key] && m[key] !== cond.alpha && m[key] !== cond.glint) disposables.push(m[key]);
         });
       });
     }
@@ -371,6 +627,36 @@ export async function buildBottle(product, sizeIndex = 0) {
     coreNeck: { y0: shape.emboss.y1 + 0.6, y1: shape.fill, halfW: 1.25 },
     geo: { shape, radiusAt, H },
     labelCanvas: frontTex.canvas,
+    /** Animação do líquido; e = fator da vista explodida (0..1). */
+    update(dt, e = 0) {
+      const t = (fluid.uTime.value += dt);
+      const f = Math.min(1, Math.max(0, (e - 0.15) / 0.6));
+      if (f > 0.05 && !wasExploded) explodeStart = t;
+      wasExploded = f > 0.05;
+      const impulse = Math.exp(-(t - explodeStart) * 1.3) * 1.0;
+      fluid.uFluid.value = f;
+      fluid.uAmp.value = f * (1 + Math.max(0, impulse));
+      liquidMat.attenuationDistance = (liq.attenuationDistance ?? 0.9) * (1 + 0.9 * f);
+      liquidMat.specularIntensity = 0.35 + 0.65 * f;
+      liquidMat.clearcoat = 0.001 + 0.999 * f;
+      liquidMat.envMapIntensity = 0.8 + 1.4 * f;
+      bubbles.visible = f > 0.01;
+      if (!bubbles.visible) return;
+      bubble.forEach((b, i) => {
+        b.y += b.speed * dt;
+        if (b.y > shape.fill - 0.35) spawn(b, false);
+        const wob = Math.sin(t * 3 + b.phase) * 0.06;
+        const s = b.size * f;
+        bm.makeScale(s, s, s);
+        bm.setPosition(b.x + wob, b.y, b.z + Math.cos(t * 2.4 + b.phase) * 0.05);
+        bubbles.setMatrixAt(i, bm);
+      });
+      bubbles.instanceMatrix.needsUpdate = true;
+    },
+    /** Garrafa gelada: mostra a condensação (névoa e gotas) sobre vidro e rótulos. */
+    setCold(on) {
+      condensation.visible = on;
+    },
     dispose() {
       new Set(disposables).forEach((d) => d.dispose?.());
     },

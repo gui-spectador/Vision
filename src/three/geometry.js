@@ -249,7 +249,8 @@ export function innerVolumeRings(radiusAt, y0, y1, wall, steps = 120, fillet = 0
     rings.push({ y, r: Math.max(0.05, r - wall), n });
   }
   const top = rings[rings.length - 1];
-  rings.push({ y: y1, r: 0, n: top.n });
+  // superfície livre com anéis concêntricos (permite ondulação)
+  for (let k = 1; k <= 8; k++) rings.push({ y: y1, r: top.r * (1 - k / 8), n: top.n });
   return rings;
 }
 

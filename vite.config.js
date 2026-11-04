@@ -9,6 +9,8 @@ export default defineConfig(({ mode }) => {
     base: './',
     plugins: single ? [viteSingleFile()] : [],
     build: {
+      // páginas: showroom (index.html) e estúdio de filmagem para vídeos/fotos (film.html)
+      rollupOptions: single ? undefined : { input: { main: 'index.html', film: 'film.html' } },
       outDir: single ? 'dist-single' : 'dist',
       assetsInlineLimit: single ? 100_000_000 : 4096,
       chunkSizeWarningLimit: 2000,

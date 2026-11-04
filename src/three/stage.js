@@ -828,6 +828,9 @@ export class Stage {
       this.#applyExplode(ease.inOutCubic(Math.min(1, Math.max(0, this.exploded))));
     }
 
+    // animação do líquido (vista explodida)
+    this.current?.update?.(dt, this.exploded);
+
     // turntable
     const b = this.current;
     const idle = !this.userActive && (!this.lastInteraction || now - this.lastInteraction > 1800);

@@ -1,5 +1,7 @@
 # Vision — Showroom 3D
 
+> Diário do projeto, status atual e próximos passos: [WIKI.md](WIKI.md).
+
 Ambiente virtual para apresentar produtos em 3D com visão profissional: o cliente escolhe um produto
 na coleção, gira a garrafa em 360°, aproxima nos detalhes e consulta composição, história e
 harmonização.
@@ -85,6 +87,18 @@ produto físico:
    `public/labels/` e informe `labelImage`.
 2. **Modelo 3D escaneado** — fotogrametria ou arquivo do fabricante em `.glb` em `public/models/`
    (veja `public/models/README.md`).
+
+## Fotos e comercial
+
+`/film.html` é o estúdio de filmagem: monta as cenas de divulgação (pilha de amoras, copo vazio,
+drink, luz vermelha, garrafa gelada com condensação) e expõe `window.film.frame(t)` e
+`window.film.still(nome)`. Para gerar tudo:
+
+```bash
+npm run dev
+node tools/render-film.cjs http://localhost:5173/film.html film-out/
+ffmpeg -framerate 24 -i film-out/frames/f%04d.jpg -c:v libx264 -crf 19 -pix_fmt yuv420p -movflags +faststart comercial.mp4
+```
 
 ## Estrutura
 

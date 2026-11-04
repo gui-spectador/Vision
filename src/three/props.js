@@ -31,73 +31,162 @@ function noiseTexture(size, colorA, colorB, streak = false, seed = 1) {
 }
 
 /* ---------- amoras ---------- */
-function blackberries(count = 7) {
-  const g = new THREE.Group();
-  const drupe = new THREE.SphereGeometry(0.24, 14, 10);
-  const perBerry = 46;
-  const mat = new THREE.MeshPhysicalMaterial({
-    color: '#1d0a22',
-    roughness: 0.16,
-    clearcoat: 1,
-    clearcoatRoughness: 0.08,
-    sheen: 0.6,
-    sheenColor: new THREE.Color('#5a2a6a'),
-    emissive: new THREE.Color('#0b0210'),
-  });
-  const inst = new THREE.InstancedMesh(drupe, mat, count * perBerry);
+
+/*
+ * Amora-preta: ~46 drupas (esferas brilhantes) distribuídas num elipsoide de 1,6 × 2,1 cm,
+ * com cálice no cabo. Todas as amoras de um grupo compartilham dois InstancedMesh.
+ */
+let berryMats = null;
+function berryMaterials() {
+  if (berryMats) return berryMats;
+  berryMats = {
+    drupe: new THREE.MeshPhysicalMaterial({
+      color: '#1d0a22',
+      roughness: 0.16,
+      clearcoat: 1,
+      clearcoatRoughness: 0.08,
+      sheen: 0.6,
+      sheenColor: new THREE.Color('#5a2a6a'),
+      emissive: new THREE.Color('#0b0210'),
+    }),
+    calyx: new THREE.MeshStandardMaterial({ color: '#4a3a1a', roughness: 0.8 }),
+    leaf: new THREE.MeshPhysicalMaterial({ color: '#2f5a24', roughness: 0.45, clearcoat: 0.4, side: THREE.DoubleSide }),
+  };
+  return berryMats;
+}
+
+/**
+ * Cria amoras a partir de posições (cm): [{ x, y, z, rx, ry, rz, s }].
+ * opts.drupes: drupas por amora (menos = mais leve, para pilhas grandes).
+ */
+export function berryField(placements, { drupes = 46, seed = 7 } = {}) {
+  const rr = mulberry32(seed);
+  const mats = berryMaterials();
+  const geo = new THREE.SphereGeometry(0.24, drupes > 36 ? 14 : 10, drupes > 36 ? 10 : 7);
+  const inst = new THREE.InstancedMesh(geo, mats.drupe, placements.length * drupes);
+  const calyx = new THREE.InstancedMesh(new THREE.ConeGeometry(0.42, 0.32, 6), mats.calyx, placements.length);
   inst.castShadow = true;
-  const calyxMat = new THREE.MeshStandardMaterial({ color: '#4a3a1a', roughness: 0.8 });
-  const m = new THREE.Matrix4();
+  inst.receiveShadow = true;
+  const M = new THREE.Matrix4();
+  const L = new THREE.Matrix4();
   const q = new THREE.Quaternion();
-  const s = new THREE.Vector3();
+  const e = new THREE.Euler();
   const p = new THREE.Vector3();
-  const spots = [
-    [-7.2, 5.8], [-9.6, 3.2], [7.6, 5.2], [10.4, 2.6], [8.6, -2.4], [-6.0, 8.6], [5.6, 8.9],
-  ];
+  const sc = new THREE.Vector3();
+  const one = new THREE.Vector3(1, 1, 1);
   let k = 0;
-  for (let b = 0; b < count; b++) {
-    const berry = new THREE.Group();
-    const [bx, bz] = spots[b % spots.length];
-    const lying = rand() > 0.35;
-    berry.position.set(bx + r(-0.6, 0.6), lying ? 0.95 : 1.15, bz + r(-0.6, 0.6));
-    berry.rotation.set(lying ? Math.PI / 2 + r(-0.3, 0.3) : r(-0.2, 0.2), r(0, Math.PI * 2), lying ? r(-0.4, 0.4) : 0);
-    berry.updateMatrixWorld(true);
-    // distribuição de Fibonacci sobre elipsoide
-    for (let i = 0; i < perBerry; i++) {
-      const t = (i + 0.5) / perBerry;
+  placements.forEach((b, bi) => {
+    e.set(b.rx ?? 0, b.ry ?? 0, b.rz ?? 0);
+    q.setFromEuler(e);
+    const s = b.s ?? 1;
+    M.compose(new THREE.Vector3(b.x, b.y, b.z), q, sc.set(s, s, s));
+    for (let i = 0; i < drupes; i++) {
+      const t = (i + 0.5) / drupes;
       const phi = Math.acos(1 - 2 * t * 0.92);
       const theta = Math.PI * (1 + Math.sqrt(5)) * i;
       p.set(Math.sin(phi) * Math.cos(theta) * 0.78, Math.cos(phi) * 1.05, Math.sin(phi) * Math.sin(theta) * 0.78);
-      p.applyMatrix4(berry.matrixWorld);
-      const sc = r(0.85, 1.12);
-      s.set(sc, sc, sc);
-      q.setFromEuler(new THREE.Euler(rand(), rand(), rand()));
-      m.compose(p, q, s);
-      inst.setMatrixAt(k++, m);
+      p.applyMatrix4(M);
+      const d = s * (0.85 + rr() * 0.27) * (drupes > 36 ? 1 : 1.18);
+      L.compose(p, q.clone().setFromEuler(new THREE.Euler(rr() * 3, rr() * 3, rr() * 3)), sc.set(d, d, d));
+      inst.setMatrixAt(k++, L);
     }
-    const calyx = new THREE.Mesh(new THREE.ConeGeometry(0.42, 0.32, 6), calyxMat);
-    calyx.position.set(0, -1.08, 0);
-    calyx.rotation.x = Math.PI;
-    berry.add(calyx);
-    g.add(berry);
-  }
+    L.compose(new THREE.Vector3(0, -1.08, 0), new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI, 0, 0)), one);
+    calyx.setMatrixAt(bi, M.clone().multiply(L));
+  });
   inst.instanceMatrix.needsUpdate = true;
-  g.add(inst);
-
-  // folha
-  const leafShape = new THREE.Shape();
-  leafShape.moveTo(0, 0);
-  leafShape.bezierCurveTo(1.6, 0.8, 2.2, 3.2, 0, 5);
-  leafShape.bezierCurveTo(-2.2, 3.2, -1.6, 0.8, 0, 0);
-  const leaf = new THREE.Mesh(
-    new THREE.ShapeGeometry(leafShape, 24),
-    new THREE.MeshPhysicalMaterial({ color: '#2f5a24', roughness: 0.45, clearcoat: 0.4, side: THREE.DoubleSide }),
-  );
-  leaf.rotation.set(-Math.PI / 2 + 0.08, 0, -0.9);
-  leaf.position.set(9.5, 0.06, 0.5);
-  leaf.receiveShadow = true;
-  g.add(leaf);
+  calyx.instanceMatrix.needsUpdate = true;
+  const g = new THREE.Group();
+  g.add(inst, calyx);
   return g;
+}
+
+function leafMesh(x, z, rot, s = 1) {
+  const shape = new THREE.Shape();
+  shape.moveTo(0, 0);
+  shape.bezierCurveTo(1.6, 0.8, 2.2, 3.2, 0, 5);
+  shape.bezierCurveTo(-2.2, 3.2, -1.6, 0.8, 0, 0);
+  const leaf = new THREE.Mesh(new THREE.ShapeGeometry(shape, 24), berryMaterials().leaf);
+  leaf.rotation.set(-Math.PI / 2 + 0.06, 0, rot);
+  leaf.position.set(x, 0.05, z);
+  leaf.scale.setScalar(s);
+  leaf.receiveShadow = true;
+  return leaf;
+}
+
+/** Amoras deitadas no chão, em grupos junto à base da garrafa (base de 8,5 × 8,5 cm). */
+function blackberries() {
+  const g = new THREE.Group();
+  const rr = mulberry32(42);
+  const R = (a, b) => a + (b - a) * rr();
+  const placements = [];
+  // grupos: [centro x, centro z, quantidade, raio do grupo]
+  const clusters = [
+    [-7.4, 5.6, 9, 3.2], [7.2, 6.0, 8, 3.0], [-9.6, -1.5, 5, 2.4], [9.8, -0.5, 5, 2.4],
+    [-1.5, 8.4, 4, 2.2], [3.2, 8.8, 3, 1.8], [-6.2, -6.4, 3, 1.8], [6.4, -6.8, 3, 1.8],
+  ];
+  for (const [cx, cz, n, rad] of clusters) {
+    for (let i = 0; i < n; i++) {
+      const a = rr() * Math.PI * 2;
+      const d = Math.sqrt(rr()) * rad;
+      let x = cx + Math.cos(a) * d;
+      let z = cz + Math.sin(a) * d;
+      // mantém fora da base da garrafa (quadrado de 4,25 cm + folga)
+      if (Math.abs(x) < 5.3 && Math.abs(z) < 5.3) {
+        const push = 5.4 / Math.max(Math.abs(x), Math.abs(z));
+        x *= push;
+        z *= push;
+      }
+      const stacked = i > 2 && rr() > 0.72;
+      placements.push({
+        x, z,
+        y: stacked ? 2.05 : 0.8,
+        rx: Math.PI / 2 + R(-0.35, 0.35),
+        ry: R(0, Math.PI * 2),
+        rz: R(-0.5, 0.5),
+        s: R(0.88, 1.08),
+      });
+    }
+  }
+  // algumas em pé, encostadas na garrafa
+  for (const [x, z] of [[-5.3, 3.4], [5.4, 2.6], [1.6, 5.4]]) {
+    placements.push({ x, z, y: 1.05, rx: R(-0.15, 0.15), ry: R(0, 6), rz: R(-0.2, 0.2), s: 1 });
+  }
+  g.add(berryField(placements));
+  g.add(leafMesh(10.5, 2.6, -0.9), leafMesh(-11, 3.5, 0.8, 0.9), leafMesh(2.5, 11, 2.6, 0.8));
+  return g;
+}
+
+/**
+ * Pilha de amoras (cm): monte de raio R e altura H com topo plano para a garrafa.
+ * Retorna { group, top } — top é a altura (cm) onde a base da garrafa apoia.
+ */
+export function berryPile({ radius = 24, height = 8, count = 520, flat = 6.6, seed = 11 } = {}) {
+  const rr = mulberry32(seed);
+  const h = (r) => (r <= flat ? height : height * Math.max(0, 1 - ((r - flat) / (radius - flat)) ** 1.5));
+  const placements = [];
+  let tries = 0;
+  while (placements.length < count && tries < count * 6) {
+    tries++;
+    const r = radius * Math.sqrt(rr()) * 1.02;
+    if (r < flat - 1.5) continue; // embaixo da garrafa ninguém vê
+    const a = rr() * Math.PI * 2;
+    const y = h(Math.min(r, radius)) + 0.55 - rr() * 0.6;
+    placements.push({ x: Math.cos(a) * r, y, z: Math.sin(a) * r, rx: rr() * 6.28, ry: rr() * 6.28, rz: rr() * 6.28, s: 0.85 + rr() * 0.3 });
+  }
+  const group = new THREE.Group();
+  group.add(berryField(placements, { drupes: 30, seed }));
+  // núcleo escuro do monte (evita frestas)
+  const pts = [];
+  for (let i = 0; i <= 24; i++) {
+    const r = (i / 24) * radius;
+    pts.push(new THREE.Vector2(r, Math.max(0.01, h(r) - 0.7)));
+  }
+  pts.push(new THREE.Vector2(radius, 0));
+  pts.unshift(new THREE.Vector2(0, height - 0.7));
+  const core = new THREE.Mesh(new THREE.LatheGeometry(pts.reverse(), 64), new THREE.MeshStandardMaterial({ color: '#0d0410', roughness: 0.6 }));
+  core.receiveShadow = true;
+  group.add(core);
+  return { group, top: height + 0.15 };
 }
 
 /* ---------- maçãs verdes ---------- */

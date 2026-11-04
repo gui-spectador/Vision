@@ -44,7 +44,46 @@ export function createPanel(el, handlers) {
   el.tabs.innerHTML = TABS.map(
     ([id, label]) => `<button class="tab" role="tab" data-tab="${id}" aria-selected="${id === state.tab}">${label}</button>`,
   ).join('');
+  // arrastar a barra de abas com o mouse (botão esquerdo) e rolar com a roda
+  let drag = null;
+  let dragged = false;
+  el.tabs.addEventListener('pointerdown', (e) => {
+    if (e.pointerType !== 'mouse' || e.button !== 0) return;
+    drag = { x: e.clientX, left: el.tabs.scrollLeft };
+    dragged = false;
+  });
+  window.addEventListener('pointermove', (e) => {
+    if (!drag) return;
+    const dx = e.clientX - drag.x;
+    if (Math.abs(dx) > 4) {
+      dragged = true;
+      el.tabs.classList.add('dragging');
+    }
+    if (dragged) el.tabs.scrollLeft = drag.left - dx;
+  });
+  window.addEventListener('pointerup', () => {
+    drag = null;
+    el.tabs.classList.remove('dragging');
+  });
+  el.tabs.addEventListener('wheel', (e) => {
+    if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && el.tabs.scrollWidth > el.tabs.clientWidth) {
+      el.tabs.scrollLeft += e.deltaY;
+      e.preventDefault();
+    }
+  }, { passive: false });
+  const updateFade = () => {
+    const max = el.tabs.scrollWidth - el.tabs.clientWidth;
+    el.tabs.classList.toggle('more-right', el.tabs.scrollLeft < max - 2);
+    el.tabs.classList.toggle('more-left', el.tabs.scrollLeft > 2);
+  };
+  el.tabs.addEventListener('scroll', updateFade);
+  window.addEventListener('resize', updateFade);
+
   el.tabs.addEventListener('click', (e) => {
+    if (dragged) {
+      dragged = false;
+      return;
+    }
     const b = e.target.closest('[data-tab]');
     if (!b) return;
     setTab(b.dataset.tab);
@@ -53,6 +92,9 @@ export function createPanel(el, handlers) {
 
   function setTab(tab) {
     state.tab = tab;
+    const active = el.tabs.querySelector(`[data-tab="${tab}"]`);
+    active?.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
+    requestAnimationFrame(updateFade);
     el.tabs.querySelectorAll('.tab').forEach((t) => t.setAttribute('aria-selected', String(t.dataset.tab === tab)));
     renderBody();
     el.body.scrollTop = 0;
