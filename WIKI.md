@@ -5,7 +5,26 @@ Diário de bordo do projeto: o que é, onde paramos, o que foi feito e o que fal
 
 ---
 
-## Onde paramos (04/11/2026, 2ª rodada)
+## Onde paramos (04/11/2026, 3ª rodada)
+
+Pedido: "me manda o vídeo e as imagens, na verdade coloca dentro do artefato". Feito: o showroom
+publicado (**versão 4**) ganhou a aba **Divulgação** no painel do Blackberry, com:
+
+- o comercial de Black Friday (player com capa, tela cheia nativa) e botão **Baixar MP4**;
+- as 6 imagens em galeria (miniaturas leves), cada uma com botão de baixar; ao tocar abre em tela cheia
+  com setas, deslizar no celular, Esc para fechar (as setas não trocam de produto enquanto ela está aberta);
+- um cartão "Campanha Black Friday" na Visão geral que leva direto à aba.
+
+Detalhes técnicos:
+- Peças movidas de `marketing/black-friday/` para **`public/divulgacao/`** (o Vite copia para a pasta de
+  build) + `public/divulgacao/miniaturas/` (480–640 px) e a capa do vídeo (quadro de 12,5 s).
+- No claude.ai o download usa a capacidade **`downloads`** declarada na publicação (o visualizador
+  confirma cada arquivo). Fora do claude.ai é um link `download` comum. Se o visualizador não oferecer
+  download, os botões somem.
+- Publicação: `dist-blackberry/index.html` + os arquivos de `dist-blackberry/divulgacao/` no mesmo
+  caminho relativo (`files` do Artifact).
+
+## 2ª rodada (04/11/2026)
 
 O usuário pediu "Continua" depois de limpar o contexto. Seguimos os próximos passos que não dependiam
 dele: **revisão visual dos outros quatro produtos** e **botão "Gelada" no showroom**.
@@ -103,6 +122,9 @@ Capturas de revisão: renderizadas com Playwright (`window.vision.stage`, giro d
 - Carvão, favo de mel e maçãs refeitos; folha da frente do Blackberry sem reflexo branco.
 - Botão "Gelada" no showroom; link publicado na versão 3.
 
+### 6. Divulgação dentro do showroom (04/11, 3ª rodada)
+- Aba Divulgação com vídeo, galeria, tela cheia e download; peças em `public/divulgacao/`; versão 4.
+
 ---
 
 ## Decisões e limitações
@@ -134,5 +156,7 @@ src/three/props.js           amoras (berryField, berryPile) e outras ambientaç�
 src/three/ar.js              exportação USDZ (AR Quick Look)
 src/film/                    cenas, câmera e textos do comercial e das fotos
 src/ui/                      painel, radar sensorial, hotspots
+src/ui/media.js              aba Divulgação: galeria, tela cheia, download (capacidade downloads)
+public/divulgacao/           comercial e imagens de divulgação (+ miniaturas/)
 tools/render-film.cjs        gera imagens e quadros do comercial
 ```

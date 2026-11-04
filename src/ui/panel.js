@@ -1,5 +1,6 @@
 import { radarChart } from './radar.js';
 import { SOURCES } from '../data/products.js';
+import { mediaSectionsHTML, mediaImages, openLightbox, handleDownload, canDownload } from './media.js';
 
 export const HOTSPOT_ORDER = ['cap', 'neck', 'emboss', 'label', 'liquid', 'base'];
 
@@ -9,7 +10,9 @@ const TABS = [
   ['history', 'História'],
   ['pairing', 'Harmonização'],
   ['sensory', 'Sensorial'],
+  ['media', 'Divulgação'], // só aparece quando o produto tem peças (product.media)
 ];
+const tabsFor = (p) => TABS.filter(([id]) => id !== 'media' || p?.media);
 
 // Paleta categórica validada (contraste, daltonismo) para a superfície escura do painel
 const GRAIN_COLORS = ['#c08a10', '#4f8fd9', '#c7563a'];
@@ -39,11 +42,37 @@ function serveIcon(name) {
 }
 
 export function createPanel(el, handlers) {
-  const state = { product: null, sizeIndex: 0, tab: 'overview' };
+  const state = { product: null, sizeIndex: 0, tab: 'overview', tabIds: '' };
 
-  el.tabs.innerHTML = TABS.map(
-    ([id, label]) => `<button class="tab" role="tab" data-tab="${id}" aria-selected="${id === state.tab}">${label}</button>`,
-  ).join('');
+  function renderTabs() {
+    const list = tabsFor(state.product);
+    const ids = list.map(([id]) => id).join(',');
+    if (ids === state.tabIds) return;
+    state.tabIds = ids;
+    if (!list.some(([id]) => id === state.tab)) state.tab = 'overview';
+    el.tabs.innerHTML = list.map(
+      ([id, label]) => `<button class="tab" role="tab" data-tab="${id}" aria-selected="${id === state.tab}">${label}</button>`,
+    ).join('');
+  }
+  renderTabs();
+
+  // divulgação: ampliar, baixar e atalho da visão geral (delegado: o corpo é refeito a cada aba)
+  el.body.addEventListener('click', (e) => {
+    const open = e.target.closest('[data-lb]');
+    if (open) {
+      openLightbox(mediaImages(state.product.media), Number(open.dataset.lb));
+      return;
+    }
+    const dl = e.target.closest('[data-dl]');
+    if (dl) {
+      handleDownload(dl);
+      return;
+    }
+    const go = e.target.closest('[data-go-tab]');
+    if (go) setTab(go.dataset.goTab);
+  });
+  // sem download neste visualizador: esconde os botões
+  canDownload().then((ok) => document.documentElement.classList.toggle('no-downloads', !ok));
   // arrastar a barra de abas com o mouse (botão esquerdo) e rolar com a roda
   let drag = null;
   let dragged = false;
@@ -132,6 +161,15 @@ export function createPanel(el, handlers) {
 
     if (state.tab === 'overview') {
       add(`<p class="lead">${esc(p.description)}</p>${p.quote ? `<blockquote class="quote"><p>“${esc(p.quote.text)}”</p><cite>${esc(p.quote.author)}</cite></blockquote>` : ''}`);
+      if (p.media) {
+        const g = p.media.groups[0];
+        const count = mediaImages(p.media).length;
+        add(`<button class="media-promo" type="button" data-go-tab="media">
+            <img src="${esc(g.video?.poster ?? `divulgacao/miniaturas/${g.images[0].file}`)}" alt="" loading="lazy" />
+            <span><strong>${esc(g.title)}</strong><small>Comercial e ${count} imagens prontas para postar</small></span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
+          </button>`);
+      }
       const wide = 'style="grid-column: span 2"';
       add(`<h4>Ficha técnica</h4>
         <div class="spec-grid">
@@ -211,6 +249,11 @@ export function createPanel(el, handlers) {
         .join('')}`);
     }
 
+    if (state.tab === 'media' && p.media) {
+      mediaSectionsHTML(p.media).forEach((html) => add(html));
+      add(`<p class="note">${esc(p.media.note)}</p>`);
+    }
+
     if (state.tab === 'sensory') {
       const t = p.tasting;
       const sec = add(`<h4>Perfil sensorial (0–5)</h4>`);
@@ -239,6 +282,7 @@ export function createPanel(el, handlers) {
       const changed = product !== state.product;
       state.product = product;
       state.sizeIndex = sizeIndex;
+      renderTabs();
       renderHead();
       if (changed) setTab(state.tab);
       else renderBody();

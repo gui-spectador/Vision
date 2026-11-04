@@ -73,6 +73,7 @@ Edite `src/data/products.js`. Cada produto define:
 | `sizes` | capacidades; a garrafa é escalada pelo volume |
 | `theme` | cores do estúdio (fundo, brilho, piso, destaque, cáustica) |
 | `props` | ambientação: `blackberries`, `charcoal`, `honey`, `cinnamon`, `apples` |
+| `media` | *(opcional)* peças de divulgação (vídeo e imagens em `public/divulgacao/`): ativa a aba **Divulgação** |
 | `composition`, `history`, `pairings`, `tasting`, `sensory`, `hotspots` | conteúdo do painel |
 
 Novos formatos de garrafa (redonda, vinho, gin…) são definidos em `SHAPES`
@@ -90,6 +91,9 @@ produto físico:
    (veja `public/models/README.md`).
 
 ## Fotos e comercial
+
+As peças prontas ficam em `public/divulgacao/` (miniaturas em `public/divulgacao/miniaturas/`) e aparecem
+na aba **Divulgação** do produto, com tela cheia e botão de baixar.
 
 `/film.html` é o estúdio de filmagem: monta as cenas de divulgação (pilha de amoras, copo vazio,
 drink, luz vermelha, garrafa gelada com condensação) e expõe `window.film.frame(t)` e

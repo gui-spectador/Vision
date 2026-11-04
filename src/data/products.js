@@ -168,6 +168,34 @@ export const PRODUCTS = [
       caustic: '#ff7a3a',
     },
     props: 'blackberries',
+    // peças de divulgação geradas no estúdio de filmagem (film.html); arquivos em public/divulgacao/
+    media: {
+      groups: [
+        {
+          title: 'Campanha Black Friday',
+          video: {
+            src: 'divulgacao/black-friday-jack-blackberry.mp4',
+            poster: 'divulgacao/miniaturas/comercial-capa.jpg',
+            title: 'Comercial Black Friday',
+            format: 'Vertical 9:16 · 720×1280 · 13 s · sem áudio',
+          },
+          images: [
+            { file: 'black-friday-feed.jpg', title: 'Black Friday · feed', format: 'Feed 4:5 · 1080×1350', w: 1080, h: 1350 },
+            { file: 'black-friday-story.jpg', title: 'Black Friday · story', format: 'Story 9:16 · 1080×1920', w: 1080, h: 1920 },
+          ],
+        },
+        {
+          title: 'Tennessee Blackberry',
+          images: [
+            { file: 'blackberry-amoras-paisagem.jpg', title: 'Garrafa nas amoras', format: 'Paisagem 16:9 · 1920×1080', w: 1920, h: 1080 },
+            { file: 'blackberry-drink-feed.jpg', title: 'Drink com amora', format: 'Feed 4:5 · 1080×1350', w: 1080, h: 1350 },
+            { file: 'blackberry-detalhe-feed.jpg', title: 'Detalhe do rótulo', format: 'Feed 4:5 · 1080×1350', w: 1080, h: 1350 },
+            { file: 'blackberry-contraluz-feed.jpg', title: 'Contraluz', format: 'Feed 4:5 · 1080×1350', w: 1080, h: 1350 },
+          ],
+        },
+      ],
+      note: 'Peças geradas pelo estúdio 3D do Vision. Não há preço nem desconto nas artes: inclua a oferta quando ela estiver definida.',
+    },
     composition: {
       blend: [
         { label: "Tennessee Whiskey Jack Daniel's Old No. 7", role: 'Base' },
