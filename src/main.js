@@ -269,7 +269,11 @@ async function main() {
     const sameProps = stage.currentProps && prevIndex === i;
     const props = sameProps ? stage.currentProps : buildProps(p.props);
     stage.showProduct(bottle, props, dir);
-    if (location.hash.slice(1) !== p.id) history.replaceState(null, '', `#${p.id}`);
+    try {
+      if (location.hash.slice(1) !== p.id) history.replaceState(null, '', `#${p.id}`);
+    } catch {
+      /* visualizadores embutidos podem bloquear o histórico */
+    }
     setTimeout(() => { state.busy = false; }, 450);
   }
 
@@ -340,7 +344,11 @@ async function main() {
   }
 
   // Realidade aumentada (AR Quick Look no iPhone/iPad)
-  if (arSupported()) btn('ar').hidden = false;
+  // dentro de um iframe (visualizadores embutidos) o AR Quick Look não abre: só mostra na página própria
+  const embedded = (() => {
+    try { return window.self !== window.top; } catch { return true; }
+  })();
+  if (arSupported() && !embedded) btn('ar').hidden = false;
 
   // Tela cheia (indisponível no Safari do iPhone)
   const fs = $('#btn-fullscreen');
