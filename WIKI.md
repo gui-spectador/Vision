@@ -23,6 +23,13 @@ de Black Friday prontos. Últimos pedidos do usuário, todos atendidos nesta rod
    balanço inicial), superfície livre ondulando, reflexos que escorrem, mais transparência e
    brilho molhado, bolhas subindo.
 
+### Entregue no fim do dia (04/11)
+
+- Comercial `marketing/black-friday/black-friday-jack-blackberry.mp4` (13 s, 720×1280, 24 fps) e as
+  seis imagens na mesma pasta (também enviados no chat).
+- Link publicado atualizado para a **versão 2** (abas arrastáveis + líquido fluido na vista explodida).
+- Tudo commitado e enviado na branch `claude/showroom-3d`.
+
 ### Próximos passos sugeridos
 
 - **Fidelidade total**: o usuário vai (talvez) fotografar a garrafa real (frente, lados, costas, quina,
