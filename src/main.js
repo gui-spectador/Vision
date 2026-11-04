@@ -9,6 +9,9 @@ import '@fontsource/great-vibes/latin-400.css';
 import '@fontsource/old-standard-tt/latin-400.css';
 import '@fontsource/old-standard-tt/latin-700.css';
 import '@fontsource/cinzel/latin-700.css';
+import '@fontsource/playfair-display/latin-900.css';
+import '@fontsource/petit-formal-script/latin-400.css';
+import '@fontsource/oswald/latin-500.css';
 import './styles.css';
 
 import { Stage, LIGHTING } from './three/stage.js';
@@ -44,6 +47,9 @@ const LABEL_FONTS = [
   '400 40px "Old Standard TT"',
   '700 40px "Old Standard TT"',
   '700 40px "Cinzel"',
+  '900 80px "Playfair Display"',
+  '400 80px "Petit Formal Script"',
+  '500 40px "Oswald"',
 ];
 
 const state = {

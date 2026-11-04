@@ -11,28 +11,39 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { paintFrontLabel, paintNeckLabel, paintBackLabel, loadLabelImage } from './labels.js';
 
 /*
- * Formatos de garrafa (medidas reais aproximadas, em centímetros, para a versão de 1 litro).
- * Perfil: [altura, raio, quadratura]. Outras capacidades são geradas por escala volumétrica.
+ * Formatos de garrafa (centímetros, versão de 1 litro). Perfil: [altura, raio, quadratura].
+ * Outras capacidades são geradas por escala volumétrica.
+ *
+ * tennesseeSquare — medido a partir de foto frontal da garrafa de 1 L do Tennessee Blackberry:
+ * largura 8,5 cm (ficha de varejo), contorno extraído pixel a pixel (1 px ≈ 0,40 mm).
+ * Altura resultante: 27,0 cm (fichas de varejo: 27,2–28 cm). Corpo de faces planas com cantos
+ * chanfrados, ombro curto e gargalo cônico com anel na base.
  */
 export const SHAPES = {
   tennesseeSquare: {
     referenceMl: 1000,
     profile: [
-      [0.0, 0.0, 18], [0.0, 3.75, 18], [0.07, 4.2, 18], [0.3, 4.44, 18], [0.75, 4.5, 18],
-      [6.0, 4.5, 18], [12.0, 4.5, 18], [16.2, 4.5, 18],
-      [17.1, 4.42, 13], [18.0, 4.1, 7], [18.8, 3.54, 4.2], [19.5, 2.78, 2.9], [20.1, 2.1, 2.25],
-      [20.7, 1.74, 2], [21.3, 1.64, 2], [21.9, 1.74, 2], [22.5, 1.64, 2], [23.6, 1.56, 2],
-      [25.5, 1.52, 2], [25.75, 1.66, 2], [26.3, 1.66, 2], [26.5, 1.47, 2], [27.7, 1.43, 2],
-      [27.95, 1.32, 2], [28.0, 1.05, 2],
+      [0.0, 0.0, 18], [0.0, 3.85, 18], [0.06, 4.1, 18], [0.25, 4.21, 18], [0.6, 4.25, 18],
+      [7.0, 4.25, 18], [14.95, 4.25, 18],
+      [15.27, 4.22, 16], [15.51, 4.11, 13], [15.75, 3.93, 10], [15.99, 3.64, 7.5],
+      [16.25, 3.28, 5.2], [16.5, 2.9, 3.8], [16.72, 2.6, 3], [16.96, 2.2, 2.3], [17.2, 1.94, 2.05],
+      [17.44, 1.87, 2], [17.68, 1.9, 2], [17.93, 1.87, 2], [18.17, 1.86, 2], [18.41, 1.9, 2],
+      [18.65, 1.94, 2], [18.95, 1.98, 2], [19.26, 2.0, 2], [19.62, 1.98, 2], [19.86, 1.95, 2],
+      [20.1, 1.9, 2], [20.59, 1.83, 2], [21.07, 1.74, 2], [21.55, 1.66, 2], [22.04, 1.57, 2],
+      [22.52, 1.49, 2], [23.0, 1.43, 2], [23.49, 1.39, 2], [23.95, 1.37, 2],
+      [24.15, 1.3, 2], [26.6, 1.27, 2], [26.85, 1.15, 2], [26.9, 0.9, 2],
     ],
-    wall: 0.32,
-    baseTop: 1.15,
-    fill: 24.3,
-    label: { y0: 3.3, y1: 13.8, width: 7.7 },
-    backLabel: { y0: 4.6, y1: 11.4, width: 6.0 },
-    neckLabel: { y0: 22.55, y1: 25.85, arc: 0.84 },
-    cap: { y0: 25.9, y1: 28.35, r: 1.82 },
-    emboss: { y0: 15.3, y1: 17.1 },
+    wall: 0.3,
+    baseTop: 1.4,
+    fill: 21.3,
+    // rótulo frontal: painel de quina a quina (face + chanfros = 9,3 cm), 3,5–13,2 cm do fundo
+    label: { y0: 3.5, y1: 13.17, width: 9.3 },
+    backLabel: { y0: 4.8, y1: 11.6, width: 6.2 },
+    // colarinho envolve todo o gargalo, da tampa até 20,1 cm
+    neckLabel: { y0: 20.06, y1: 24.15, arc: 0.999 },
+    // tampa: Ø 2,9 cm, 2,9 cm de altura, faixa dourada de 0,65 cm no topo
+    cap: { y0: 24.12, y1: 27.03, r: 1.46, gold: 0.65 },
+    emboss: { y0: 15.0, y1: 16.15 },
   },
 };
 
@@ -54,10 +65,17 @@ function embossNormalMap(text) {
   ctx.fillStyle = '#fff';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.font = '400 74px "Rye", serif';
-  ctx.filter = 'blur(2.2px)';
+  // letras espaçadas ocupando ~64% da face (face ≈ 26% do perímetro)
+  const target = W * 0.26 * 0.64;
+  let size = 90;
+  const spaced = (t) => [...t].join(String.fromCharCode(8202));
+  do {
+    ctx.font = `700 ${size}px "Old Standard TT", serif`;
+    size -= 2;
+  } while (ctx.measureText(spaced(text)).width > target && size > 20);
+  ctx.filter = 'blur(1.6px)';
   // u: frente = 0.75, laterais = 0.25 ± 0.25, costas = 0.25
-  for (const u of [0.75, 0.25, 0.0, 0.5, 1.0]) ctx.fillText(text, u * W, H / 2 + 4);
+  for (const u of [0.75, 0.25, 0.0, 0.5, 1.0]) ctx.fillText(spaced(text), u * W, H / 2 + 4);
   ctx.filter = 'none';
   const src = ctx.getImageData(0, 0, W, H).data;
   const out = ctx.createImageData(W, H);
@@ -163,9 +181,7 @@ export async function buildBottle(product, sizeIndex = 0) {
     roughness: 0.035,
     ior: 1.52,
     specularIntensity: 1,
-    clearcoat: 1,
-    clearcoatRoughness: 0.02,
-    envMapIntensity: 1.9,
+    envMapIntensity: 1.45,
     normalMap: em,
     normalScale: new THREE.Vector2(0.9, 0.9),
     transparent: true,
@@ -184,8 +200,8 @@ export async function buildBottle(product, sizeIndex = 0) {
     roughness: 0.06,
     ior: 1.52,
     thickness: 1.2,
-    attenuationColor: new THREE.Color('#cfe9df'),
-    attenuationDistance: 0.6,
+    attenuationColor: new THREE.Color(product.liquid.color).lerp(new THREE.Color('#ffffff'), 0.45),
+    attenuationDistance: 0.35,
     specularIntensity: 1,
     envMapIntensity: 1.4,
   });
@@ -229,28 +245,31 @@ export async function buildBottle(product, sizeIndex = 0) {
   const back = doubleMesh(backGeo, labelMaterials(backTex, paperBack));
   parts.back.add(back);
 
-  /* Tampa rosqueável serrilhada */
+  /* Tampa rosqueável: corpo preto canelado + faixa dourada no topo */
   const c = shape.cap;
+  const goldH = product.cap?.ring ? c.gold ?? 0.6 : 0;
   const capRings = [
     { y: c.y0, r: 0, n: 2 },
-    { y: c.y0, r: c.r - 0.12, n: 2 },
+    { y: c.y0, r: c.r - 0.1, n: 2 },
     { y: c.y0 + 0.03, r: c.r - 0.02, n: 2 },
-    { y: c.y0 + 0.12, r: c.r, n: 2 },
-    { y: c.y1 - 0.18, r: c.r, n: 2 },
-    { y: c.y1 - 0.06, r: c.r - 0.05, n: 2 },
-    { y: c.y1 - 0.01, r: c.r - 0.16, n: 2 },
-    { y: c.y1, r: c.r - 0.3, n: 2 },
+    { y: c.y0 + 0.1, r: c.r, n: 2 },
+    { y: c.y1 - 0.14, r: c.r, n: 2 },
+    { y: c.y1 - 0.04, r: c.r - 0.05, n: 2 },
+    { y: c.y1, r: c.r - 0.18, n: 2 },
     { y: c.y1, r: 0, n: 2 },
   ];
   const capMat = new THREE.MeshPhysicalMaterial({
     color: new THREE.Color(product.cap?.color ?? '#0d0d0f'),
-    roughness: 0.32,
+    roughness: 0.22,
     metalness: 0,
-    clearcoat: 0.7,
-    clearcoatRoughness: 0.25,
+    clearcoat: 1,
+    clearcoatRoughness: 0.12,
   });
   const capMesh = new THREE.Mesh(
-    superLathe(capRings, 288, { height: H, ribs: { y0: c.y0 + 0.25, y1: c.y1 - 0.25, count: 72, depth: 0.035 } }),
+    superLathe(capRings, 288, {
+      height: H,
+      ribs: { y0: c.y0 + 0.18, y1: c.y1 - goldH - 0.08, count: 24, depth: 0.05 },
+    }),
     capMat,
   );
   capMesh.castShadow = true;
@@ -259,11 +278,11 @@ export async function buildBottle(product, sizeIndex = 0) {
   const topColor = product.cap?.top ?? product.cap?.color ?? '#0d0d0f';
   const topIsMetal = product.cap?.topMetal ?? false;
   const capTop = new THREE.Mesh(
-    new THREE.CircleGeometry(c.r - 0.34, 96),
+    new THREE.CircleGeometry(c.r - 0.17, 96),
     new THREE.MeshPhysicalMaterial({
       color: new THREE.Color(topColor),
       metalness: topIsMetal ? 1 : 0,
-      roughness: topIsMetal ? 0.28 : 0.4,
+      roughness: topIsMetal ? 0.3 : 0.4,
       clearcoat: 0.5,
     }),
   );
@@ -271,17 +290,17 @@ export async function buildBottle(product, sizeIndex = 0) {
   capTop.position.y = c.y1 + 0.004;
   parts.cap.add(capTop);
 
-  // Anel metálico no topo da tampa (quando existir)
-  if (product.cap?.ring) {
+  // Faixa dourada lisa no topo da tampa
+  if (goldH > 0) {
     const ringRings = [
-      { y: c.y1 - 0.42, r: c.r + 0.045, n: 2 },
-      { y: c.y1 - 0.12, r: c.r + 0.045, n: 2 },
-      { y: c.y1 - 0.03, r: c.r - 0.06, n: 2 },
-      { y: c.y1, r: c.r - 0.3, n: 2 },
+      { y: c.y1 - goldH, r: c.r + 0.012, n: 2 },
+      { y: c.y1 - 0.12, r: c.r + 0.012, n: 2 },
+      { y: c.y1 - 0.03, r: c.r - 0.05, n: 2 },
+      { y: c.y1 + 0.002, r: c.r - 0.17, n: 2 },
     ];
     const ring = new THREE.Mesh(
       superLathe(ringRings, 160, { height: H }),
-      new THREE.MeshPhysicalMaterial({ color: product.cap.ring, metalness: 1, roughness: 0.26, clearcoat: 0.6 }),
+      new THREE.MeshPhysicalMaterial({ color: product.cap.ring, metalness: 1, roughness: 0.28, clearcoat: 0.6 }),
     );
     parts.cap.add(ring);
   }
@@ -309,8 +328,8 @@ export async function buildBottle(product, sizeIndex = 0) {
     cap: { position: new THREE.Vector3(0, c.y1 - 1.1, c.r + 0.05), normal: new THREE.Vector3(0, 0.2, 1).normalize(), part: 'cap' },
     neck: { ...surfaceAnchor(radiusAt, (shape.neckLabel.y0 + shape.neckLabel.y1) / 2, 0.25, 0.08), part: 'labels' },
     emboss: { ...surfaceAnchor(radiusAt, (shape.emboss.y0 + shape.emboss.y1) / 2, 0.25, 0.06), part: 'glass' },
-    label: { ...surfaceAnchor(radiusAt, shape.label.y1 - 1.2, 0.31, 0.08), part: 'labels' },
-    liquid: { ...surfaceAnchor(radiusAt, 15.2, 0.125, 0.05), part: 'liquid' },
+    label: { ...surfaceAnchor(radiusAt, (shape.label.y0 + shape.label.y1) / 2, 0.37, 0.08), part: 'labels' },
+    liquid: { ...surfaceAnchor(radiusAt, shape.label.y1 + 1.0, 0.125, 0.05), part: 'liquid' },
     base: { ...surfaceAnchor(radiusAt, 0.55, 0.25, 0.05), part: 'glass' },
   };
 
@@ -348,7 +367,8 @@ export async function buildBottle(product, sizeIndex = 0) {
     heightWorld: H * k * SCENE,
     widthWorld: 9 * k * SCENE,
     centerY: (H * k * SCENE) * 0.48,
-    core: { y0: shape.baseTop + 0.6, y1: shape.emboss.y1 + 0.6, halfW: 3.3 },
+    core: { y0: shape.baseTop + 0.6, y1: shape.emboss.y0 + 0.4, halfW: 3.1 },
+    coreNeck: { y0: shape.emboss.y1 + 0.6, y1: shape.fill, halfW: 1.25 },
     geo: { shape, radiusAt, H },
     labelCanvas: frontTex.canvas,
     dispose() {

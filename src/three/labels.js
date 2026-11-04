@@ -295,9 +295,154 @@ const ICONS = {
   },
 };
 
-/* ---------- rótulo frontal ---------- */
+/* ---------- ornamentos do painel (estilo do rótulo original) ---------- */
 
-export function paintFrontLabel(design, volumeText, { width = 1400, height = 1780 } = {}) {
+/** Arabesco superior: duas volutas espelhadas que saem do centro. */
+function topFlourish(ctx, cx, y, w, lw) {
+  ctx.lineWidth = lw;
+  ctx.lineCap = 'round';
+  for (const d of [-1, 1]) {
+    const x = (t) => cx + d * w * t;
+    ctx.beginPath();
+    ctx.moveTo(x(0.03), y + 4);
+    ctx.bezierCurveTo(x(0.16), y - w * 0.07, x(0.3), y + w * 0.06, x(0.46), y - w * 0.01);
+    ctx.bezierCurveTo(x(0.55), y - w * 0.045, x(0.6), y - w * 0.08, x(0.53), y - w * 0.095);
+    ctx.bezierCurveTo(x(0.47), y - w * 0.105, x(0.45), y - w * 0.06, x(0.5), y - w * 0.055);
+    ctx.stroke();
+    // segunda haste, mais alta
+    ctx.beginPath();
+    ctx.moveTo(x(0.1), y - w * 0.035);
+    ctx.bezierCurveTo(x(0.22), y - w * 0.1, x(0.33), y - w * 0.02, x(0.4), y - w * 0.07);
+    ctx.stroke();
+    // voluta externa
+    ctx.beginPath();
+    ctx.moveTo(x(0.55), y + 2);
+    ctx.bezierCurveTo(x(0.68), y + w * 0.05, x(0.8), y - w * 0.07, x(0.92), y - w * 0.02);
+    ctx.bezierCurveTo(x(0.99), y + w * 0.01, x(0.97), y + w * 0.06, x(0.91), y + w * 0.05);
+    ctx.bezierCurveTo(x(0.87), y + w * 0.04, x(0.88), y + w * 0.01, x(0.92), y + w * 0.015);
+    ctx.stroke();
+  }
+  ctx.beginPath();
+  ctx.moveTo(cx, y - 12);
+  ctx.lineTo(cx + 9, y + 2);
+  ctx.lineTo(cx, y + 16);
+  ctx.lineTo(cx - 9, y + 2);
+  ctx.closePath();
+  ctx.fill();
+}
+
+/** Linha lateral da moldura, com voluta no alto, losango no meio e curva para dentro embaixo. */
+function sideFrame(ctx, x, y0, y1, dir, lw) {
+  const h = y1 - y0;
+  ctx.lineWidth = lw;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(x + dir * 46, y0 + 30);
+  ctx.bezierCurveTo(x + dir * 70, y0 - 6, x + dir * 8, y0 - 18, x, y0 + 30);
+  ctx.bezierCurveTo(x - dir * 10, y0 + h * 0.18, x + dir * 6, y0 + h * 0.3, x, y0 + h * 0.42);
+  ctx.bezierCurveTo(x - dir * 6, y0 + h * 0.55, x + dir * 10, y0 + h * 0.7, x, y0 + h * 0.86);
+  ctx.bezierCurveTo(x - dir * 4, y0 + h * 0.95, x + dir * 30, y1 + 6, x + dir * 90, y1 - 4);
+  ctx.stroke();
+  // linha interna paralela (filete duplo)
+  ctx.lineWidth = lw * 0.55;
+  ctx.beginPath();
+  ctx.moveTo(x + dir * 16, y0 + h * 0.08);
+  ctx.bezierCurveTo(x + dir * 8, y0 + h * 0.3, x + dir * 22, y0 + h * 0.6, x + dir * 14, y0 + h * 0.84);
+  ctx.stroke();
+  // losango no meio, apontando para fora
+  const my = y0 + h * 0.42;
+  ctx.beginPath();
+  ctx.moveTo(x - dir * 34, my);
+  ctx.lineTo(x - dir * 14, my - 11);
+  ctx.lineTo(x + dir * 2, my);
+  ctx.lineTo(x - dir * 14, my + 11);
+  ctx.closePath();
+  ctx.fill();
+}
+
+/** Arabesco inferior, ligando as duas laterais. */
+function bottomFlourish(ctx, cx, y, w, lw) {
+  ctx.lineWidth = lw;
+  ctx.lineCap = 'round';
+  for (const d of [-1, 1]) {
+    const x = (t) => cx + d * w * t;
+    ctx.beginPath();
+    ctx.moveTo(x(0.95), y - 18);
+    ctx.bezierCurveTo(x(0.78), y + 22, x(0.55), y - 28, x(0.3), y + 6);
+    ctx.bezierCurveTo(x(0.18), y + 22, x(0.08), y + 10, x(0.1), y - 6);
+    ctx.bezierCurveTo(x(0.12), y - 20, x(0.2), y - 14, x(0.17), y - 4);
+    ctx.stroke();
+  }
+  ctx.beginPath();
+  ctx.arc(cx, y + 6, 7, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+/** Amora-preta com coroa de folhas (ícone dourado do rótulo). */
+function blackberryCrest(ctx, cx, cy, s) {
+  // coroa: cinco folhas pontudas abertas em leque
+  const leaf = (ang, len, wid) => {
+    ctx.save();
+    ctx.translate(cx, cy - s * 0.34);
+    ctx.rotate(ang);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.bezierCurveTo(wid, -len * 0.3, wid * 0.55, -len * 0.78, 0, -len);
+    ctx.bezierCurveTo(-wid * 0.55, -len * 0.78, -wid, -len * 0.3, 0, 0);
+    ctx.fill();
+    ctx.restore();
+  };
+  leaf(-1.42, s * 0.5, s * 0.11);
+  leaf(-0.8, s * 0.42, s * 0.11);
+  leaf(0, s * 0.26, s * 0.09);
+  leaf(0.8, s * 0.42, s * 0.11);
+  leaf(1.42, s * 0.5, s * 0.11);
+  // fruto: drupas redondas com sulcos entre elas
+  const rows = [[-0.27, 3], [-0.09, 4], [0.09, 4], [0.27, 3], [0.43, 2]];
+  const r = s * 0.105;
+  for (const [fy, count] of rows) {
+    for (let i = 0; i < count; i++) {
+      const fx = (i - (count - 1) / 2) * 0.205;
+      ctx.beginPath();
+      ctx.arc(cx + fx * s, cy + s * 0.04 + fy * s, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+}
+
+/** Voluta que ladeia o ícone: espiral na ponta interna e cauda afilada para fora. */
+function scrollSwoosh(ctx, x, y, w, dir, lw) {
+  ctx.lineCap = 'round';
+  ctx.lineWidth = lw;
+  ctx.beginPath();
+  // espiral
+  for (let t = 0; t <= 1.0001; t += 0.02) {
+    const a = Math.PI * 2.2 * t + Math.PI * 0.5;
+    const rr = w * 0.09 * (1 - t * 0.75);
+    const px = x + dir * (Math.cos(a) * rr);
+    const py = y - w * 0.05 + Math.sin(a) * rr;
+    if (t === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+  // cauda dupla
+  for (const [o, k] of [[0, 1], [16, 0.7]]) {
+    ctx.lineWidth = lw * k;
+    ctx.beginPath();
+    ctx.moveTo(x, y + w * 0.04 + o * 0.3);
+    ctx.bezierCurveTo(x + dir * w * 0.35, y + w * 0.16 + o, x + dir * w * 0.62, y - w * 0.02 + o, x + dir * w, y - w * 0.22 + o * 0.4);
+    ctx.stroke();
+  }
+}
+
+/* ---------- rótulo frontal: painel de quina a quina ---------- */
+
+/*
+ * Proporções medidas na foto do rótulo de 1 L. O painel cobre a face e os dois chanfros
+ * (largura de superfície 9,3 cm): a face plana vai de u = 0,118 a 0,882 e os textos
+ * verticais ficam sobre os chanfros (u ≈ 0,069 e 0,931).
+ */
+export function paintFrontLabel(design, volumeText, { width = 1700, height = 1768 } = {}) {
   const L = new LabelCanvas(width, height, { base: design.bg[0] });
   const { c } = L;
   const W = width;
@@ -305,210 +450,246 @@ export function paintFrontLabel(design, volumeText, { width = 1400, height = 178
   const cx = W / 2;
   const foil = design.foil ?? 'gold';
   const ink = design.ink;
+  const Y = (f) => f * H;
 
-  // Fundo com gradiente radial e textura de papel
-  const g = c.createRadialGradient(cx, H * 0.42, 40, cx, H * 0.5, H * 0.75);
+  // fundo
+  const g = c.createRadialGradient(cx, Y(0.42), 60, cx, Y(0.5), W * 0.75);
   g.addColorStop(0, design.bg[0]);
   g.addColorStop(1, design.bg[1]);
   c.fillStyle = g;
   c.fillRect(0, 0, W, H);
   const rnd = mulberry32(7);
-  c.globalAlpha = design.paperGrain ?? 0.05;
-  for (let i = 0; i < 9000; i++) {
+  c.globalAlpha = design.paperGrain ?? 0.035;
+  for (let i = 0; i < 12000; i++) {
     c.fillStyle = rnd() > 0.5 ? '#fff' : '#000';
     c.fillRect(rnd() * W, rnd() * H, 2, 2);
   }
   c.globalAlpha = 1;
 
-  // Molduras
-  L.el((ctx, s) => { ctx.strokeStyle = s; frame(ctx, W, H, 26, 9, 40); }, { fill: foil, raise: 0.3 });
-  L.el((ctx, s) => { ctx.strokeStyle = s; frame(ctx, W, H, 50, 3, 26); }, { fill: foil, raise: 0.2 });
-
-  // Faixas laterais com texto vertical
-  const bandL = 64;
-  const bandR = W - 64;
-  L.el((ctx, s) => {
-    ctx.strokeStyle = s;
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(bandL + 62, 190);
-    ctx.lineTo(bandL + 62, H - 190);
-    ctx.moveTo(bandR - 62, 190);
-    ctx.lineTo(bandR - 62, H - 190);
-    ctx.stroke();
-  }, { fill: foil, raise: 0.15 });
+  // textos verticais sobre os chanfros
   L.el((ctx, s) => {
     ctx.fillStyle = s;
-    ctx.font = '700 34px "Old Standard TT", serif';
     ctx.textBaseline = 'middle';
-    ctx.save();
-    ctx.translate(bandL + 31, H / 2);
-    ctx.rotate(Math.PI / 2);
-    spacedText(ctx, design.sideLeft ?? 'JACK DANIEL DISTILLERY', 0, 0, 10);
-    ctx.restore();
-    ctx.save();
-    ctx.translate(bandR - 31, H / 2);
-    ctx.rotate(-Math.PI / 2);
-    spacedText(ctx, design.sideRight ?? 'QUALITY & CRAFTSMANSHIP', 0, 0, 10);
-    ctx.restore();
+    const t1 = design.sideLeft ?? 'JACK DANIEL DISTILLERY';
+    const t2 = design.sideRight ?? 'QUALITY & CRAFTSMANSHIP';
+    const span = H * 0.8;
+    for (const [text, x, rot] of [[t1, W * 0.069, Math.PI / 2], [t2, W * 0.931, -Math.PI / 2]]) {
+      ctx.save();
+      ctx.translate(x, H * 0.51);
+      ctx.rotate(rot);
+      ctx.font = '700 58px "Old Standard TT", serif';
+      const plain = ctx.measureText(text).width;
+      const gap = Math.max(4, (span - plain) / (text.length - 1));
+      spacedText(ctx, text, 0, 0, gap);
+      ctx.restore();
+    }
   }, { fill: design.sideInk ?? ink, raise: 0.12 });
 
-  // Filigrana superior
-  L.el((ctx, s) => { ctx.strokeStyle = s; ctx.fillStyle = s; filigree(ctx, cx, 150, 760, 5); }, { fill: foil, raise: 0.25 });
-
-  // Marca em arco
-  const wm = design.wordmark ?? "JACK DANIEL'S";
-  const wmSize = fitFont(c, wm, '"Rye", serif', 400, 168, 1000, 0.02);
+  // moldura dourada: arabesco superior, laterais e inferior
   L.el((ctx, s) => {
-    ctx.font = `400 ${wmSize}px "Rye", serif`;
-    ctx.textBaseline = 'alphabetic';
-    ctx.lineJoin = 'round';
-    if (design.wordmarkStroke) {
-      ctx.strokeStyle = design.wordmarkStroke;
-      ctx.lineWidth = 14;
-      arcText(ctx, wm, cx, 360, 1500, wmSize * 0.02, 'stroke');
-    }
-    ctx.fillStyle = s;
-    arcText(ctx, wm, cx, 360, 1500, wmSize * 0.02, 'fill');
-  }, { fill: design.wordmarkFill ?? ink, raise: 0.3 });
-
-  // Ícone com arabescos
-  const iconY = 560;
-  L.el((ctx, s, k) => {
     ctx.strokeStyle = s;
     ctx.fillStyle = s;
-    scroll(ctx, cx - 120, iconY + 10, 300, -1, 5);
-    scroll(ctx, cx + 120, iconY + 10, 300, 1, 5);
-    const icon = ICONS[design.icon];
-    if (icon) icon(ctx, cx, iconY, 150, s, k);
+    topFlourish(ctx, cx, Y(0.088), W * 0.31, 5);
+    sideFrame(ctx, W * 0.177, Y(0.355), Y(0.93), 1, 5);
+    sideFrame(ctx, W * 0.823, Y(0.355), Y(0.93), -1, 5);
+    bottomFlourish(ctx, cx, Y(0.94), W * 0.28, 5);
+  }, { fill: foil, raise: 0.28 });
+
+  // marca em arco (letras altas e condensadas)
+  const wm = design.wordmark ?? "JACK DANIEL'S";
+  L.el((ctx, s) => {
+    const sx = 0.54;
+    ctx.save();
+    ctx.translate(cx, 0);
+    ctx.scale(sx, 1);
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = s;
+    const target = (W * 0.67) / sx;
+    let size = 360;
+    while (size > 80) {
+      ctx.font = `900 ${size}px "Playfair Display", serif`;
+      if (ctx.measureText(wm).width + size * 0.015 * wm.length <= target) break;
+      size -= 4;
+    }
+    // engrossa o traço (o logotipo original é bem mais pesado que a fonte)
+    ctx.strokeStyle = s;
+    ctx.lineWidth = size * 0.035;
+    ctx.lineJoin = 'round';
+    arcText(ctx, wm, 0, Y(0.232), 2600, size * 0.015, 'both');
+    ctx.restore();
+    // ® pequeno
+    ctx.font = '700 30px "Old Standard TT", serif';
+    ctx.fillStyle = s;
+    ctx.fillText('®', cx + W * 0.336, Y(0.3));
+  }, { fill: design.wordmarkFill ?? ink, raise: 0.3 });
+
+  // ícone central + pinceladas
+  L.el((ctx, s, k) => {
+    ctx.fillStyle = s;
+    ctx.strokeStyle = s;
+    if (design.icon === 'blackberry') blackberryCrest(ctx, cx, Y(0.365), 250);
+    else if (ICONS[design.icon]) ICONS[design.icon](ctx, cx, Y(0.365), 210, s, k);
+    scrollSwoosh(ctx, cx - W * 0.1, Y(0.43), W * 0.16, -1, 6);
+    scrollSwoosh(ctx, cx + W * 0.1, Y(0.43), W * 0.16, 1, 6);
   }, { fill: design.iconFill ?? foil, raise: 0.35, knock: design.bg[0] });
 
-  // Script (ex.: "Tennessee" / "Old No. 7")
+  // "Tennessee" (script encorpado)
   if (design.script) {
-    const sSize = fitFont(c, design.script, '"Great Vibes", cursive', 400, design.scriptSize ?? 220, 900);
     L.el((ctx, s) => {
-      ctx.font = `400 ${sSize}px "Great Vibes", cursive`;
+      const size = fitFont(ctx, design.script, '"Petit Formal Script", cursive', 400, design.scriptSize ?? 175, W * 0.42);
+      ctx.font = `400 ${size}px "Petit Formal Script", cursive`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'alphabetic';
       ctx.fillStyle = s;
-      ctx.fillText(design.script, cx, 850);
+      ctx.strokeStyle = s;
+      ctx.lineWidth = size * 0.05;
+      ctx.lineJoin = 'round';
+      ctx.strokeText(design.script, cx, Y(0.553));
+      ctx.fillText(design.script, cx, Y(0.553));
     }, { fill: design.scriptFill ?? ink, raise: 0.25 });
   }
 
-  // Título em versais (ex.: "BLACKBERRY")
+  // título em versais (ex.: "BLACKBERRY")
   if (design.title) {
-    const tSize = fitFont(c, design.title, '"Old Standard TT", serif', 700, 150, 980, 0.06);
     L.el((ctx, s) => {
+      const tSize = fitFont(ctx, design.title, '"Old Standard TT", serif', 700, 124, W * 0.5, 0.05);
       ctx.font = `700 ${tSize}px "Old Standard TT", serif`;
       ctx.textBaseline = 'alphabetic';
       ctx.fillStyle = s;
-      const tw = spacedText(ctx, design.title, cx, 1010, tSize * 0.06);
-      ctx.font = `700 ${tSize * 0.28}px "Old Standard TT", serif`;
+      const tw = spacedText(ctx, design.title, cx, Y(0.645), tSize * 0.05);
+      ctx.font = `700 ${tSize * 0.24}px "Old Standard TT", serif`;
       ctx.textAlign = 'left';
-      ctx.fillText('®', cx + tw / 2 + 6, 1010 - tSize * 0.62);
+      ctx.fillText(design.titleMark ?? '™', cx + tw / 2 + 6, Y(0.645) - tSize * 0.05);
     }, { fill: design.titleFill ?? ink, raise: 0.25 });
-  }
-
-  // Kicker (ex.: "ORIGINAL RECIPE")
-  if (design.kicker) {
+    // losangos laterais na altura do título
     L.el((ctx, s) => {
-      ctx.font = '700 52px "Cinzel", serif';
       ctx.fillStyle = s;
-      ctx.strokeStyle = s;
-      ctx.lineWidth = 3;
-      const tw = spacedText(ctx, design.kicker, cx, 1125, 8);
-      ctx.beginPath();
-      ctx.moveTo(cx - tw / 2 - 150, 1108);
-      ctx.lineTo(cx - tw / 2 - 30, 1108);
-      ctx.moveTo(cx + tw / 2 + 30, 1108);
-      ctx.lineTo(cx + tw / 2 + 150, 1108);
-      ctx.stroke();
+      for (const x of [W * 0.208, W * 0.792]) {
+        ctx.beginPath();
+        ctx.moveTo(x, Y(0.565) - 14);
+        ctx.lineTo(x + 10, Y(0.565));
+        ctx.lineTo(x, Y(0.565) + 14);
+        ctx.lineTo(x - 10, Y(0.565));
+        ctx.closePath();
+        ctx.fill();
+      }
     }, { fill: foil, raise: 0.3 });
   }
 
-  // Linhas descritivas
+  // "ORIGINAL RECIPE"
+  if (design.kicker) {
+    L.el((ctx, s) => {
+      ctx.font = '700 46px "Old Standard TT", serif';
+      ctx.fillStyle = s;
+      ctx.textBaseline = 'alphabetic';
+      spacedText(ctx, design.kicker, cx, Y(0.712), 7);
+    }, { fill: foil, raise: 0.3 });
+  }
+
+  // descrição + teor alcoólico
   L.el((ctx, s) => {
     ctx.fillStyle = s;
     ctx.textBaseline = 'alphabetic';
-    let y = 1220;
+    let y = Y(0.772);
     for (const line of design.lines ?? []) {
-      const size = fitFont(ctx, line, '"Old Standard TT", serif', 700, 46, 860, 0.08);
+      ctx.save();
+      ctx.translate(cx, y);
+      ctx.scale(0.86, 1);
+      const size = fitFont(ctx, line, '"Old Standard TT", serif', 700, 44, (W * 0.56) / 0.86, 0.02);
       ctx.font = `700 ${size}px "Old Standard TT", serif`;
-      spacedText(ctx, line, cx, y, size * 0.08);
-      y += 62;
+      spacedText(ctx, line, 0, 0, size * 0.02);
+      ctx.restore();
+      y += Y(0.0275);
     }
-    ctx.font = '400 50px "Old Standard TT", serif';
-    spacedText(ctx, `${design.abv}  ${volumeText}`, cx, y + 40, 2);
+    ctx.font = '500 40px "Oswald", sans-serif';
+    spacedText(ctx, `${design.abv}  ${volumeText}`.toUpperCase(), cx, y + Y(0.012), 3);
   }, { fill: design.smallInk ?? ink, raise: 0.12 });
-
-  // Filigrana inferior + cartucho
-  L.el((ctx, s) => {
-    ctx.strokeStyle = s;
-    ctx.fillStyle = s;
-    filigree(ctx, cx, H - 175, 700, 5);
-    ctx.font = '700 30px "Cinzel", serif';
-    spacedText(ctx, design.footer ?? 'LYNCHBURG · TENNESSEE', cx, H - 92, 8);
-  }, { fill: foil, raise: 0.25 });
 
   return L.textures();
 }
 
 /* ---------- colarinho (gargalo) ---------- */
 
-export function paintNeckLabel(design, { width = 2048, height = 830 } = {}) {
-  // proporção ≈ perímetro coberto (≈8,2 cm) / altura (≈3,3 cm) para não distorcer
+/*
+ * Envolve todo o gargalo (perímetro médio ≈ 10,7 cm × 4,1 cm de altura). O centro do canvas é a
+ * frente da garrafa. Faixa dourada larga no topo, filetes finos e, na frente, marca + ícone +
+ * "Tennessee BLACKBERRY".
+ */
+export function paintNeckLabel(design, { width = 2048, height = 786 } = {}) {
   const L = new LabelCanvas(width, height, { base: design.neckBg ?? design.bg[0] });
   const { c } = L;
   const W = width;
   const H = height;
   const g = c.createLinearGradient(0, 0, 0, H);
-  g.addColorStop(0, design.neckBg ?? design.bg[1]);
-  g.addColorStop(0.5, design.bg[0]);
-  g.addColorStop(1, design.neckBg ?? design.bg[1]);
+  g.addColorStop(0, design.bg[1]);
+  g.addColorStop(0.45, design.neckBg ?? design.bg[0]);
+  g.addColorStop(1, design.bg[1]);
   c.fillStyle = g;
   c.fillRect(0, 0, W, H);
   const foil = design.foil ?? 'gold';
   const ink = design.neckInk ?? design.ink;
   L.el((ctx, s) => {
     ctx.fillStyle = s;
-    ctx.fillRect(0, 0, W, 54);
-    ctx.fillRect(0, H - 54, W, 54);
-    ctx.fillRect(0, 78, W, 8);
-    ctx.fillRect(0, H - 86, W, 8);
+    ctx.fillRect(0, 0, W, H * 0.055);
+    ctx.fillRect(0, H * 0.1, W, H * 0.018);
+    ctx.fillRect(0, H * 0.905, W, H * 0.02);
   }, { fill: foil, raise: 0.3 });
 
-  const cx = W / 2;
   const wm = design.wordmark ?? "JACK DANIEL'S";
-  L.el((ctx, s) => {
+  const drawSet = (ctx, s, x, k = 1) => {
+    // marca em arco (~24% da circunferência)
+    ctx.save();
+    ctx.translate(x, 0);
+    ctx.scale(0.68 * k, k);
+    let size = 160;
+    do {
+      ctx.font = `900 ${size}px "Playfair Display", serif`;
+      size -= 4;
+    } while (ctx.measureText(wm).width * 0.68 > W * 0.25 && size > 40);
     ctx.fillStyle = s;
-    ctx.textAlign = 'center';
-    const wmSize = fitFont(ctx, wm, '"Rye", serif', 400, 120, 760, 0.03);
-    ctx.font = `400 ${wmSize}px "Rye", serif`;
-    arcText(ctx, wm, cx, 270, 1400, wmSize * 0.03);
+    arcText(ctx, wm, 0, (H * 0.44) / k, 1400, size * 0.02);
+    ctx.restore();
+    ctx.fillStyle = s;
+    // "Tennessee BLACKBERRY" (~39% da circunferência)
+    const line = design.neckTitle ?? design.title ?? '';
     const script = design.neckScript ?? design.script ?? '';
-    const sSize = fitFont(ctx, script, '"Great Vibes", cursive', 400, 150, 640);
-    ctx.font = `400 ${sSize}px "Great Vibes", cursive`;
-    ctx.fillText(script, cx, 480);
-    const title = design.neckTitle ?? design.title ?? '';
-    const tSize = fitFont(ctx, title, '"Old Standard TT", serif', 700, 92, 700, 0.12);
-    ctx.font = `700 ${tSize}px "Old Standard TT", serif`;
-    spacedText(ctx, title, cx, 640, tSize * 0.12);
-    // laterais (visíveis quando a garrafa gira)
-    ctx.font = '400 64px "Rye", serif';
-    for (const x of [W * 0.1, W * 0.9]) {
-      const sz = fitFont(ctx, wm, '"Rye", serif', 400, 64, 330);
-      ctx.font = `400 ${sz}px "Rye", serif`;
-      ctx.fillText(wm, x, H / 2 + sz * 0.35);
+    ctx.textBaseline = 'alphabetic';
+    let f = 1;
+    const measure = () => {
+      ctx.font = `400 ${84 * f * k}px "Petit Formal Script", cursive`;
+      const sw = ctx.measureText(script).width;
+      ctx.font = `700 ${60 * f * k}px "Old Standard TT", serif`;
+      const tw = ctx.measureText(line).width + line.length * 6 * k;
+      return [sw, tw, sw + 24 * k + tw];
+    };
+    let [sw, tw, total] = measure();
+    while (total > W * 0.39 * k && f > 0.4) {
+      f -= 0.04;
+      [sw, tw, total] = measure();
     }
+    let x0 = x - total / 2;
+    ctx.textAlign = 'left';
+    ctx.font = `400 ${84 * f * k}px "Petit Formal Script", cursive`;
+    ctx.fillText(script, x0, H * 0.745);
+    x0 += sw + 24 * k;
+    ctx.font = `700 ${60 * f * k}px "Old Standard TT", serif`;
+    spacedText(ctx, line, x0 + tw / 2, H * 0.745, 6 * k);
+    ctx.textAlign = 'center';
+  };
+  L.el((ctx, s) => {
+    drawSet(ctx, s, W / 2);
+    drawSet(ctx, s, 0, 0.9); // costas (atravessa a emenda)
+    drawSet(ctx, s, W, 0.9);
   }, { fill: ink, raise: 0.25 });
-  if (ICONS[design.icon]) {
-    L.el((ctx, s, k) => {
-      ctx.fillStyle = s;
-      ctx.strokeStyle = s;
-      ICONS[design.icon](ctx, cx - 560, H / 2 + 10, 230, s, k);
-      ICONS[design.icon](ctx, cx + 560, H / 2 + 10, 230, s, k);
-    }, { fill: design.iconFill ?? foil, raise: 0.35, knock: design.bg[0] });
-  }
+  L.el((ctx, s, k) => {
+    ctx.fillStyle = s;
+    ctx.strokeStyle = s;
+    if (design.icon === 'blackberry') {
+      blackberryCrest(ctx, W / 2, H * 0.56, 120);
+    } else if (ICONS[design.icon]) {
+      ICONS[design.icon](ctx, W / 2, H * 0.56, 100, s, k);
+    }
+  }, { fill: design.iconFill ?? foil, raise: 0.35, knock: design.neckBg ?? design.bg[0] });
   return L.textures();
 }
 

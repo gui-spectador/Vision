@@ -21,9 +21,9 @@ const ease = {
 };
 
 export const LIGHTING = {
-  studio: { label: 'Estúdio', env: { strip: 7, top: 3.2, rim: 3.5, fill: 0.9, warm: 0 }, key: 55, rect: 5, glow: 1.0, glowSize: 5.5, core: 2.1, exposure: 1.0, caustic: 0.4, bokeh: 0.5, warm: 0 },
-  backlight: { label: 'Contraluz', env: { strip: 4, top: 1.6, rim: 7, fill: 0.35, warm: 0 }, key: 22, rect: 2.5, glow: 1.6, glowSize: 9, core: 4.2, exposure: 1.0, caustic: 0.75, bokeh: 0.7, warm: 0 },
-  bar: { label: 'Bar', env: { strip: 4.5, top: 1.2, rim: 3, fill: 0.5, warm: 1 }, key: 34, rect: 3.2, glow: 0.85, glowSize: 4, core: 2.3, exposure: 0.95, caustic: 0.55, bokeh: 1.0, warm: 1 },
+  studio: { label: 'Estúdio', env: { strip: 6, top: 3.2, rim: 3.5, fill: 0.22, warm: 0 }, key: 55, rect: 5, glow: 1.0, glowSize: 5.5, core: 1.7, exposure: 1.0, caustic: 0.4, bokeh: 0.5, warm: 0 },
+  backlight: { label: 'Contraluz', env: { strip: 3.5, top: 1.6, rim: 7, fill: 0.12, warm: 0 }, key: 22, rect: 2.5, glow: 1.6, glowSize: 9, core: 3.4, exposure: 1.0, caustic: 0.75, bokeh: 0.7, warm: 0 },
+  bar: { label: 'Bar', env: { strip: 4, top: 1.2, rim: 3, fill: 0.15, warm: 1 }, key: 34, rect: 3.2, glow: 0.85, glowSize: 4, core: 1.9, exposure: 0.95, caustic: 0.55, bokeh: 1.0, warm: 1 },
 };
 
 function radialTexture(stops, size = 256, square = 0) {
@@ -130,6 +130,8 @@ export class Stage {
       uTime: { value: 0 },
       uCoreNdc: { value: new THREE.Vector2(0, 0) },
       uCoreHalf: { value: new THREE.Vector2(0.1, 0.3) },
+      uNeckNdc: { value: new THREE.Vector2(0, 0) },
+      uNeckHalf: { value: new THREE.Vector2(0.0001, 0.0001) },
       uCoreColor: { value: new THREE.Color('#ffe0b5') },
       uCoreStrength: { value: 0 },
     };
@@ -149,6 +151,7 @@ export class Stage {
         uniform vec3 uBase; uniform vec3 uGlow; uniform vec3 uFloor; uniform vec3 uGlowDir;
         uniform float uGlowStrength; uniform float uGlowSize;
         uniform vec2 uCoreNdc; uniform vec2 uCoreHalf; uniform vec3 uCoreColor; uniform float uCoreStrength;
+        uniform vec2 uNeckNdc; uniform vec2 uNeckHalf;
         varying vec3 vDir;
         varying vec4 vClip;
         float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
@@ -161,9 +164,13 @@ export class Stage {
           col = mix(col, uFloor * (0.8 + 0.6 * g), below);
           col *= 1.0 - 0.45 * smoothstep(0.25, 0.95, d.y);
           // luz de recorte atrás do líquido: é ela que a transmissão "enxerga" através da bebida
-          vec2 q = abs((vClip.xy / vClip.w - uCoreNdc) / uCoreHalf);
+          vec2 ndc = vClip.xy / vClip.w;
+          vec2 q = abs((ndc - uCoreNdc) / uCoreHalf);
           float r = pow(pow(q.x, 3.0) + pow(q.y, 3.0), 1.0 / 3.0);
-          col += uCoreColor * uCoreStrength * (smoothstep(1.2, 0.25, r) + 0.07 * smoothstep(2.4, 0.6, r));
+          vec2 qn = abs((ndc - uNeckNdc) / uNeckHalf);
+          float rn = pow(pow(qn.x, 3.0) + pow(qn.y, 3.0), 1.0 / 3.0);
+          float core = max(smoothstep(1.2, 0.25, r), 0.6 * smoothstep(1.15, 0.3, rn));
+          col += uCoreColor * uCoreStrength * (core + 0.07 * smoothstep(2.4, 0.6, r));
           col += (hash(gl_FragCoord.xy) - 0.5) / 255.0;
           gl_FragColor = vec4(col, 1.0);
           #include <tonemapping_fragment>
@@ -321,8 +328,8 @@ export class Stage {
       m.lookAt(0, 1.4, 0);
       env.add(m);
     };
-    panel(1.1, 9, cfg.strip, tone, new THREE.Vector3(-5, 1.6, 2.2));
-    panel(1.1, 9, cfg.strip * 0.85, tone, new THREE.Vector3(5, 1.6, 2.2));
+    panel(0.55, 9, cfg.strip, tone, new THREE.Vector3(-5, 1.6, 2.2));
+    panel(0.55, 9, cfg.strip * 0.85, tone, new THREE.Vector3(5, 1.6, 2.2));
     panel(6, 4, cfg.top, tone, new THREE.Vector3(0, 8, 0.5));
     panel(0.7, 8, cfg.rim, new THREE.Color(accent).lerp(tone, 0.5), new THREE.Vector3(-3.5, 1.5, -6));
     panel(0.7, 8, cfg.rim, new THREE.Color(accent).lerp(tone, 0.5), new THREE.Vector3(3.5, 1.5, -6));
@@ -674,26 +681,31 @@ export class Stage {
     return url;
   }
 
-  /** Posiciona a luz de recorte atrás do líquido (em coordenadas de tela normalizadas). */
+  /** Posiciona a luz de recorte atrás do líquido (corpo e gargalo), em coordenadas de tela normalizadas. */
   #updateCore(camera, bottle = this.current) {
     const u = this.themeUniforms;
     if (!bottle?.core) {
       u.uCoreHalf.value.set(0.0001, 0.0001);
+      u.uNeckHalf.value.set(0.0001, 0.0001);
       return;
     }
-    const { y0, y1, halfW } = bottle.core;
     const part = bottle.parts.liquid ?? bottle.model;
     camera.updateMatrixWorld();
-    const c = part.localToWorld(new THREE.Vector3(0, (y0 + y1) / 2, 0));
-    const top = part.localToWorld(new THREE.Vector3(0, y1, 0));
-    const side = part.localToWorld(new THREE.Vector3(halfW, (y0 + y1) / 2, 0));
     const right = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 0);
-    const sideP = c.clone().addScaledVector(right, side.distanceTo(c));
-    const nc = c.clone().project(camera);
-    const nt = top.project(camera);
-    const ns = sideP.project(camera);
-    u.uCoreNdc.value.set(nc.x, nc.y);
-    u.uCoreHalf.value.set(Math.max(0.002, Math.abs(ns.x - nc.x)), Math.max(0.002, Math.abs(nt.y - nc.y)));
+    const place = ({ y0, y1, halfW }, ndcOut, halfOut) => {
+      const c = part.localToWorld(new THREE.Vector3(0, (y0 + y1) / 2, 0));
+      const top = part.localToWorld(new THREE.Vector3(0, y1, 0));
+      const side = part.localToWorld(new THREE.Vector3(halfW, (y0 + y1) / 2, 0));
+      const sideP = c.clone().addScaledVector(right, side.distanceTo(c));
+      const nc = c.clone().project(camera);
+      const nt = top.project(camera);
+      const ns = sideP.project(camera);
+      ndcOut.set(nc.x, nc.y);
+      halfOut.set(Math.max(0.002, Math.abs(ns.x - nc.x)), Math.max(0.002, Math.abs(nt.y - nc.y)));
+    };
+    place(bottle.core, u.uCoreNdc.value, u.uCoreHalf.value);
+    if (bottle.coreNeck) place(bottle.coreNeck, u.uNeckNdc.value, u.uNeckHalf.value);
+    else u.uNeckHalf.value.set(0.0001, 0.0001);
   }
 
   /** Renderiza um quadro imediatamente (usado para gerar vídeos/imagens). */
@@ -759,10 +771,10 @@ export class Stage {
       out.anchors[key] = { ...s, facing };
     }
     const partCenters = {
-      cap: new THREE.Vector3(1.9, 27.1, 0),
-      labels: new THREE.Vector3(0, 3.0, 4.6),
-      glass: new THREE.Vector3(0, 0.3, 4.6),
-      liquid: new THREE.Vector3(0, 1.4, 4.2),
+      cap: new THREE.Vector3(1.6, 25.6, 0),
+      labels: new THREE.Vector3(0, 3.3, 4.35),
+      glass: new THREE.Vector3(0, 0.3, 4.35),
+      liquid: new THREE.Vector3(0, 1.7, 3.95),
     };
     for (const [key, c] of Object.entries(partCenters)) {
       const part = b.parts[key];
