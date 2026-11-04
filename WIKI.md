@@ -5,43 +5,47 @@ Diário de bordo do projeto: o que é, onde paramos, o que foi feito e o que fal
 
 ---
 
-## Onde paramos (04/11/2026)
+## Onde paramos (04/11/2026, 2ª rodada)
 
-Estamos no **Jack Daniel's Tennessee Blackberry**: showroom 3D publicado e materiais de divulgação
-de Black Friday prontos. Últimos pedidos do usuário, todos atendidos nesta rodada:
+O usuário pediu "Continua" depois de limpar o contexto. Seguimos os próximos passos que não dependiam
+dele: **revisão visual dos outros quatro produtos** e **botão "Gelada" no showroom**.
 
-1. **Mais amoras no chão** em volta da garrafa (grupos encostados na base, algumas empilhadas).
-2. **Imagens de divulgação** para enviar, no estilo dos anúncios de referência (lista abaixo).
-3. **Comercial de Black Friday** (vertical, 13 s): quarto escuro, copo de whisky vazio na mesa,
-   câmera saindo de dentro do copo até a garrafa na pilha de amoras, luz vermelha piscando por
-   cima e o título **BLACK FRIDAY** descendo (BLACK preto com contorno vermelho, FRIDAY vermelho).
-   - Ajuste pedido no meio: **vermelho só como luz suave** (o líquido manteve o âmbar natural) e
-     **garrafa bem gelada**, com névoa, gotas de condensação e escorridos.
-4. **Aba "Sensorial" cortada** no painel: as abas agora cabem e, se faltar espaço, a barra pode ser
-   arrastada com o botão esquerdo do mouse (ou com a roda).
-5. **Líquido da vista explodida** deixou de parecer gelatina: volume ondula como fluido (com
-   balanço inicial), superfície livre ondulando, reflexos que escorrem, mais transparência e
-   brilho molhado, bolhas subindo.
+### Feito nesta rodada
 
-### Entregue no fim do dia (04/11)
+1. **Contra-rótulo (todos os produtos)**: tinha um vazio grande no meio. Agora: marca, nome do produto,
+   arabesco na cor da edição, descrição maior e uma ficha (Tipo, Teor alcoólico, Conteúdo, Origem,
+   Servir) com filetes, e o rodapé "Beba com moderação".
+2. **Old No. 7**: "Tennessee" passou a ser manuscrito, legível, entre "BRAND" e "SOUR MASH WHISKEY"
+   (opção `kickerScript` no `design`).
+3. **Ambientações refeitas**:
+   - Old No. 7: carvão de bordo em pedaços irregulares com quinas quebradas, veios e rachaduras
+     (textura de cor, rugosidade e relevo); aduela curva com a face carbonizada para cima.
+   - Honey: favo com células hexagonais ocas, mel brilhante (transmissão) e opérculos de cera, sobre
+     uma poça de mel. Antes eram prismas amarelos que pareciam lápis.
+   - Apple: maçãs tinham formato de pera (estreitas em cima); novo perfil (ombros largos, cavidade
+     do cabo), casca com lenticelas e manchas, folha no cabo.
+   - Fire (canela e anis) revisado: ok, sem mudanças.
+   - Blackberry: a folha da frente aparecia como um risco branco (verniz de raspão); corrigido.
+4. **Botão "Gelada"** no dock (desktop e celular): liga a condensação (névoa, gotas e escorridos) e
+   vale para qualquer produto ou tamanho escolhido depois.
+5. Link publicado atualizado para a **versão 3**.
 
-- Comercial `marketing/black-friday/black-friday-jack-blackberry.mp4` (13 s, 720×1280, 24 fps) e as
-  seis imagens na mesma pasta (também enviados no chat).
-- Link publicado atualizado para a **versão 2** (abas arrastáveis + líquido fluido na vista explodida).
-- Tudo commitado e enviado na branch `claude/showroom-3d`.
+Capturas de revisão: renderizadas com Playwright (`window.vision.stage`, giro desligado,
+`maxDt` alto para as transições terminarem em poucos quadros).
 
 ### Próximos passos sugeridos
 
 - **Fidelidade total**: o usuário vai (talvez) fotografar a garrafa real (frente, lados, costas, quina,
   close do rótulo, colarinho girando, topo da tampa, fundo, relevo, com régua). Com isso: medir o
   perfil exato e usar as fotos como textura dos rótulos. Alternativa: arte oficial da Brown-Forman Brasil.
-- Testar no **iPhone real** (desempenho, gaveta, AR).
+- Testar no **iPhone real** (desempenho, gaveta, AR, botão Gelada).
 - **AR** só funciona com hospedagem própria (GitHub Pages): o visualizador do claude.ai bloqueia.
 - Comercial: versão **16:9** e/ou **trilha sonora**; incluir **preço/oferta** quando o usuário definir
   (não inventamos desconto).
-- Revisar os outros produtos (Old No. 7, Honey, Fire, Apple), que herdaram o novo layout de rótulo
-  sem revisão visual.
-- Oferecer a condensação ("garrafa gelada") também como botão no showroom.
+- Honey: a fonte oficial fala em rótulo "branco, dourado e preto" (o nosso é creme com preto e dourado);
+  conferir com foto se a abelha é dourada ou preta.
+- Old No. 7: o "7" no círculo abaixo da marca é licença nossa; conferir com foto (acreditamos que o
+  rótulo real não tem esse medalhão).
 
 ---
 
@@ -93,6 +97,11 @@ de Black Friday prontos. Últimos pedidos do usuário, todos atendidos nesta rod
   `blackberry-amoras-paisagem` (1920×1080), `blackberry-drink-feed`, `blackberry-detalhe-feed`,
   `blackberry-contraluz-feed` (1080×1350).
 - Showroom: abas arrastáveis, líquido com comportamento de fluido na vista explodida.
+
+### 5. Revisão da coleção (04/11, 2ª rodada)
+- Contra-rótulo com ficha técnica; "Tennessee" manuscrito no Old No. 7.
+- Carvão, favo de mel e maçãs refeitos; folha da frente do Blackberry sem reflexo branco.
+- Botão "Gelada" no showroom; link publicado na versão 3.
 
 ---
 

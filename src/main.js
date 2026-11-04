@@ -58,6 +58,7 @@ const state = {
   thumbs: {},
   cache: new Map(), // `${id}:${size}` -> bottle (LRU)
   busy: false,
+  cold: false, // garrafa gelada (condensação)
 };
 
 function hasWebGL2() {
@@ -266,6 +267,7 @@ async function main() {
     updateShelf();
     layoutInsets(stage);
     const bottle = await getBottle(p, 0);
+    bottle.setCold?.(state.cold);
     const sameProps = stage.currentProps && prevIndex === i;
     const props = sameProps ? stage.currentProps : buildProps(p.props);
     stage.showProduct(bottle, props, dir);
@@ -288,6 +290,7 @@ async function main() {
     panel.render(p, si);
     hotspots.setProduct(p, p.sizes[si]);
     const bottle = await getBottle(p, si);
+    bottle.setCold?.(state.cold);
     stage.showProduct(bottle, stage.currentProps, 0);
     setTimeout(() => { state.busy = false; }, 300);
   }
@@ -318,6 +321,10 @@ async function main() {
       b.classList.toggle('active', stage.spin);
     } else if (a === 'explode') {
       setExplode(stage.explodeTarget === 0);
+    } else if (a === 'cold') {
+      state.cold = !state.cold;
+      stage.current?.setCold?.(state.cold);
+      b.classList.toggle('active', state.cold);
     } else if (a === 'hotspots') {
       const off = $('#hotspots').classList.toggle('off');
       b.classList.toggle('active', !off);

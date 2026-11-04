@@ -577,7 +577,21 @@ export function paintFrontLabel(design, volumeText, { width = 1700, height = 176
   }
 
   // "ORIGINAL RECIPE"
-  if (design.kicker) {
+  if (design.kicker && design.kickerScript) {
+    // ex.: "Tennessee" manuscrito do Old No. 7, entre "BRAND" e "SOUR MASH WHISKEY"
+    L.el((ctx, s) => {
+      const size = fitFont(ctx, design.kicker, '"Petit Formal Script", cursive', 400, 94, W * 0.38);
+      ctx.font = `400 ${size}px "Petit Formal Script", cursive`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillStyle = s;
+      ctx.strokeStyle = s;
+      ctx.lineWidth = size * 0.045;
+      ctx.lineJoin = 'round';
+      ctx.strokeText(design.kicker, cx, Y(0.722));
+      ctx.fillText(design.kicker, cx, Y(0.722));
+    }, { fill: design.kickerFill ?? ink, raise: 0.25 });
+  } else if (design.kicker) {
     L.el((ctx, s) => {
       ctx.font = '700 46px "Old Standard TT", serif';
       ctx.fillStyle = s;
@@ -700,28 +714,106 @@ export function paintBackLabel(design, product, volumeText, { width = 1100, heig
   const { c } = L;
   const W = width;
   const H = height;
+  const cx = W / 2;
   c.fillStyle = design.backBg ?? '#efe6d2';
   c.fillRect(0, 0, W, H);
   const ink = design.backInk ?? '#1d1a17';
-  L.el((ctx, s) => { ctx.strokeStyle = s; frame(ctx, W, H, 30, 4, 24); }, { fill: ink, raise: 0.1 });
+  const accent = design.backAccent ?? design.bg?.[0] ?? ink;
+  const left = 110;
+  const right = W - 110;
+
+  // moldura dupla
+  L.el((ctx, s) => {
+    ctx.strokeStyle = s;
+    frame(ctx, W, H, 30, 4, 24);
+    frame(ctx, W, H, 46, 1.5, 18);
+  }, { fill: ink, raise: 0.1 });
+
+  // cabeçalho: marca, produto e arabesco na cor da edição
+  let y = 168;
   L.el((ctx, s) => {
     ctx.fillStyle = s;
     ctx.textAlign = 'center';
-    ctx.font = '400 86px "Rye", serif';
-    ctx.fillText(design.wordmark ?? "JACK DANIEL'S", W / 2, 170);
-    ctx.font = '700 44px "Cinzel", serif';
-    ctx.fillText(product.name.replace(/^Jack Daniel's\s*/i, '').toUpperCase(), W / 2, 250);
-    ctx.font = '400 36px "Old Standard TT", serif';
-    const text = product.backLabel ?? product.tagline ?? '';
-    wrap(ctx, text, W / 2, 340, W - 180, 50);
-    ctx.font = '700 34px "Old Standard TT", serif';
-    ctx.fillText(`${product.abv}% vol · ${volumeText}`, W / 2, H - 300);
-    ctx.font = '400 30px "Old Standard TT", serif';
-    ctx.fillText(product.origin ?? '', W / 2, H - 250);
-    ctx.font = '700 32px "Cinzel", serif';
-    ctx.fillText('BEBA COM MODERAÇÃO', W / 2, H - 150);
-    ctx.font = '400 26px "Old Standard TT", serif';
-    ctx.fillText('Venda proibida para menores de 18 anos', W / 2, H - 105);
+    ctx.textBaseline = 'alphabetic';
+    const wm = design.wordmark ?? "JACK DANIEL'S";
+    ctx.font = `400 ${fitFont(ctx, wm, '"Rye", serif', 400, 96, right - left)}px "Rye", serif`;
+    ctx.fillText(wm, cx, y);
+    const name = product.name.replace(/^Jack Daniel's\s*/i, '').toUpperCase();
+    ctx.font = `700 ${fitFont(ctx, name, '"Cinzel", serif', 700, 50, right - left, 0.08)}px "Cinzel", serif`;
+    spacedText(ctx, name, cx, y + 70, 4);
+  }, { fill: ink, raise: 0.12 });
+  L.el((ctx, s) => {
+    ctx.fillStyle = s;
+    ctx.strokeStyle = s;
+    filigree(ctx, cx, y + 122, 420, 3);
+  }, { fill: accent, raise: 0.12 });
+
+  // descrição (el() desenha a mesma coisa em três camadas: nada de estado mutável no callback)
+  const descY = y + 200;
+  const descFont = 'italic 400 46px "Old Standard TT", serif';
+  const desc = product.backLabel ?? product.tagline ?? '';
+  c.save();
+  c.font = descFont;
+  const descLines = wrapLines(c, desc, right - left - 20);
+  c.restore();
+  L.el((ctx, s) => {
+    ctx.fillStyle = s;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    ctx.font = descFont;
+    descLines.forEach((line, i) => ctx.fillText(line, cx, descY + i * 60));
+  }, { fill: ink, raise: 0.08 });
+  y = descY + descLines.length * 60;
+
+  // ficha técnica: rótulo à esquerda, valor à direita, filetes entre as linhas
+  const rows = [
+    ['TIPO', product.categoryShort ?? product.category],
+    ['TEOR ALCOÓLICO', `${product.abv}% vol${product.proof ? ` · ${product.proof} proof` : ''}`],
+    ['CONTEÚDO', volumeText],
+    ['ORIGEM', product.origin],
+    ['SERVIR', product.temperature],
+  ].filter(([, v]) => v);
+  const rowH = 76;
+  const top = Math.max(y + 70, 640);
+  L.el((ctx, s) => {
+    ctx.fillStyle = s;
+    ctx.strokeStyle = s;
+    ctx.textBaseline = 'alphabetic';
+    ctx.lineWidth = 1.5;
+    rows.forEach(([k, v], i) => {
+      const ry = top + i * rowH;
+      ctx.globalAlpha = 0.45;
+      ctx.beginPath();
+      ctx.moveTo(left, ry - 50);
+      ctx.lineTo(right, ry - 50);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+      ctx.textAlign = 'left';
+      ctx.font = '700 31px "Cinzel", serif';
+      spacedText(ctx, k, left + ctx.measureText(k).width / 2 + k.length, ry, 2);
+      ctx.textAlign = 'right';
+      const keyW = ctx.measureText(k).width + k.length * 2 + 30;
+      ctx.font = `400 ${fitFont(ctx, v, '"Old Standard TT", serif', 400, 42, right - left - keyW)}px "Old Standard TT", serif`;
+      ctx.fillText(v, right, ry);
+    });
+    ctx.globalAlpha = 0.45;
+    const ly = top + rows.length * rowH - 50;
+    ctx.beginPath();
+    ctx.moveTo(left, ly);
+    ctx.lineTo(right, ly);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }, { fill: ink, raise: 0.08 });
+
+  // rodapé
+  L.el((ctx, s) => {
+    ctx.fillStyle = s;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    ctx.font = '700 38px "Cinzel", serif';
+    spacedText(ctx, 'BEBA COM MODERAÇÃO', cx, H - 140, 3);
+    ctx.font = '400 31px "Old Standard TT", serif';
+    ctx.fillText('Venda proibida para menores de 18 anos', cx, H - 92);
   }, { fill: ink, raise: 0.1 });
   return L.textures();
 }
@@ -737,20 +829,20 @@ export async function loadLabelImage(url) {
 
 /* ---------- helpers ---------- */
 
-function wrap(ctx, text, x, y, maxWidth, lineHeight) {
-  const words = text.split(/\s+/);
+function wrapLines(ctx, text, maxWidth) {
+  const out = [];
   let line = '';
-  for (const word of words) {
+  for (const word of text.split(/\s+/).filter(Boolean)) {
     const test = line ? `${line} ${word}` : word;
     if (ctx.measureText(test).width > maxWidth && line) {
-      ctx.fillText(line, x, y);
+      out.push(line);
       line = word;
-      y += lineHeight;
     } else {
       line = test;
     }
   }
-  if (line) ctx.fillText(line, x, y);
+  if (line) out.push(line);
+  return out;
 }
 
 export function mulberry32(seed) {

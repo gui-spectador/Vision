@@ -23,6 +23,7 @@ Tennessee Honey, Tennessee Fire e Tennessee Apple.
 - **Pontos de interesse**: seis marcadores na garrafa (tampa, colarinho, relevo, rótulo, líquido,
   base); ao tocar, a câmera voa até o detalhe e mostra a explicação.
 - **Vista explodida**: separa tampa, rótulos, contra-rótulo, vidro e líquido com legendas.
+- **Garrafa gelada**: botão *Gelada* cobre vidro e rótulos com névoa, gotas e escorridos de condensação.
 - **Painel de detalhes**: visão geral e ficha técnica, composição (blend, receita de grãos,
   processo do grão à garrafa, teor alcoólico), linha do tempo da história, harmonização (como
   servir, pratos, drinks com receita) e perfil sensorial (radar + notas de degustação).
