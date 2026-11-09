@@ -379,7 +379,7 @@ function bottomFlourish(ctx, cx, y, w, lw) {
 }
 
 /** Amora-preta com coroa de folhas (ícone dourado do rótulo). */
-function blackberryCrest(ctx, cx, cy, s) {
+function blackberryCrest(ctx, cx, cy, s, outline = null) {
   // coroa: cinco folhas pontudas abertas em leque
   const leaf = (ang, len, wid) => {
     ctx.save();
@@ -392,11 +392,11 @@ function blackberryCrest(ctx, cx, cy, s) {
     ctx.fill();
     ctx.restore();
   };
-  leaf(-1.42, s * 0.5, s * 0.11);
-  leaf(-0.8, s * 0.42, s * 0.11);
-  leaf(0, s * 0.26, s * 0.09);
-  leaf(0.8, s * 0.42, s * 0.11);
-  leaf(1.42, s * 0.5, s * 0.11);
+  // como no rótulo: quatro folhas finas em leque
+  leaf(-1.08, s * 0.5, s * 0.1);
+  leaf(-0.34, s * 0.36, s * 0.09);
+  leaf(0.34, s * 0.36, s * 0.09);
+  leaf(1.08, s * 0.5, s * 0.1);
   // fruto: drupas redondas com sulcos entre elas
   const rows = [[-0.27, 3], [-0.09, 4], [0.09, 4], [0.27, 3], [0.43, 2]];
   const r = s * 0.105;
@@ -406,6 +406,14 @@ function blackberryCrest(ctx, cx, cy, s) {
       ctx.beginPath();
       ctx.arc(cx + fx * s, cy + s * 0.04 + fy * s, r, 0, Math.PI * 2);
       ctx.fill();
+      if (outline) {
+        // contorno na cor do fundo: drupas separadas, como na impressão
+        const prev = ctx.strokeStyle;
+        ctx.strokeStyle = outline;
+        ctx.lineWidth = s * 0.024;
+        ctx.stroke();
+        ctx.strokeStyle = prev;
+      }
     }
   }
 }
@@ -497,8 +505,9 @@ export function paintFrontLabel(design, volumeText, { width = 1700, height = 176
 
   // marca em arco (letras altas e condensadas)
   const wm = design.wordmark ?? "JACK DANIEL'S";
+  const wmY = design.wordmarkY ?? 0.232;
   L.el((ctx, s) => {
-    const sx = 0.54;
+    const sx = design.wordmarkScaleX ?? 0.54; // menos compressão = letras mais largas e baixas
     ctx.save();
     ctx.translate(cx, 0);
     ctx.scale(sx, 1);
@@ -515,19 +524,19 @@ export function paintFrontLabel(design, volumeText, { width = 1700, height = 176
     ctx.strokeStyle = s;
     ctx.lineWidth = size * 0.035;
     ctx.lineJoin = 'round';
-    arcText(ctx, wm, 0, Y(0.232), 2600, size * 0.015, 'both');
+    arcText(ctx, wm, 0, Y(wmY), 2600, size * 0.015, 'both');
     ctx.restore();
     // ® pequeno
     ctx.font = '700 30px "Old Standard TT", serif';
     ctx.fillStyle = s;
-    ctx.fillText('®', cx + W * 0.336, Y(0.3));
+    ctx.fillText('®', cx + W * 0.336, Y(wmY + 0.068));
   }, { fill: design.wordmarkFill ?? ink, raise: 0.3 });
 
   // ícone central + pinceladas
   L.el((ctx, s, k) => {
     ctx.fillStyle = s;
     ctx.strokeStyle = s;
-    if (design.icon === 'blackberry') blackberryCrest(ctx, cx, Y(0.365), 250);
+    if (design.icon === 'blackberry') blackberryCrest(ctx, cx, Y(0.365), 250, k);
     else if (ICONS[design.icon]) ICONS[design.icon](ctx, cx, Y(0.365), 210, s, k);
     scrollSwoosh(ctx, cx - W * 0.1, Y(0.43), W * 0.16, -1, 6);
     scrollSwoosh(ctx, cx + W * 0.1, Y(0.43), W * 0.16, 1, 6);
@@ -593,11 +602,11 @@ export function paintFrontLabel(design, volumeText, { width = 1700, height = 176
     }, { fill: design.kickerFill ?? ink, raise: 0.25 });
   } else if (design.kicker) {
     L.el((ctx, s) => {
-      ctx.font = '700 46px "Old Standard TT", serif';
+      ctx.font = `700 ${design.kickerSize ?? 46}px "Old Standard TT", serif`;
       ctx.fillStyle = s;
       ctx.textBaseline = 'alphabetic';
       spacedText(ctx, design.kicker, cx, Y(0.712), 7);
-    }, { fill: foil, raise: 0.3 });
+    }, { fill: design.kickerFill ?? foil, raise: 0.3 });
   }
 
   // descrição + teor alcoólico
@@ -615,8 +624,9 @@ export function paintFrontLabel(design, volumeText, { width = 1700, height = 176
       ctx.restore();
       y += Y(0.0275);
     }
-    ctx.font = '500 40px "Oswald", sans-serif';
-    spacedText(ctx, `${design.abv}  ${volumeText}`.toUpperCase(), cx, y + Y(0.012), 3);
+    ctx.font = `500 ${design.abvSize ?? 40}px "Oswald", sans-serif`;
+    const abvLine = `${design.abv}  ${volumeText}`;
+    spacedText(ctx, design.abvKeepCase ? abvLine : abvLine.toUpperCase(), cx, y + Y(0.016), 3);
   }, { fill: design.smallInk ?? ink, raise: 0.12 });
 
   return L.textures();
@@ -699,7 +709,7 @@ export function paintNeckLabel(design, { width = 2048, height = 786 } = {}) {
     ctx.fillStyle = s;
     ctx.strokeStyle = s;
     if (design.icon === 'blackberry') {
-      blackberryCrest(ctx, W / 2, H * 0.56, 120);
+      blackberryCrest(ctx, W / 2, H * 0.56, 120, k);
     } else if (ICONS[design.icon]) {
       ICONS[design.icon](ctx, W / 2, H * 0.56, 100, s, k);
     }

@@ -5,7 +5,25 @@ Diário de bordo do projeto: o que é, onde paramos, o que foi feito e o que fal
 
 ---
 
-## Onde paramos (04/11/2026, 3ª rodada)
+## Onde paramos (09/11/2026, 4ª rodada)
+
+- **Rótulo do Blackberry conferido com foto da garrafa vendida no Brasil** (enviada pelo usuário):
+  descrição "BLACKBERRY LIQUEUR / FROM THE MAKERS OF JACK DANIEL'S / TENNESSEE WHISKEY", teor
+  "35% Vol. 1 LITRE" (700 ml: "70 cl", suposição no padrão europeu), marca em creme mais larga e baixa,
+  amora em dourado claro com drupas separadas pelo roxo e quatro folhas, "BLACKBERRY®".
+  Novas opções de `design`: `wordmarkScaleX`, `wordmarkY`, `kickerFill`, `kickerSize`, `abvKeepCase`,
+  `abvSize`. Link publicado na **versão 5**.
+- As peças de divulgação (6 imagens e comercial em `public/divulgacao/`) foram renderizadas **antes**
+  dessa correção: ainda mostram "blended with" e "35% Alc/Vol 70 Proof". Regenerar com
+  `tools/render-film.cjs` quando quiser.
+- **Comercial de 30 s no Runway ("Gelado quanto?")**: o usuário vai fazer pelo site do Runway. Mandamos
+  um kit com roteiro, prompts por cena e duas imagens de referência da garrafa. A tentativa pela API
+  parou porque a chave salva não foi aceita (resposta "No API key was provided").
+- Ambiente de nuvem **"Vision"** (pessoal) criado para este repositório; guarda um segredo de rede para
+  `api.dev.runwayml.com` que hoje não funciona (pode ser apagado em Edit → Network secrets).
+- **PR #1** aberto pelo usuário a partir da branch `claude/showroom-3d`; novos commits o atualizam.
+
+## 3ª rodada (04/11/2026)
 
 Pedido: "me manda o vídeo e as imagens, na verdade coloca dentro do artefato". Feito: o showroom
 publicado (**versão 4**) ganhou a aba **Divulgação** no painel do Blackberry, com:
@@ -124,6 +142,9 @@ Capturas de revisão: renderizadas com Playwright (`window.vision.stage`, giro d
 
 ### 6. Divulgação dentro do showroom (04/11, 3ª rodada)
 - Aba Divulgação com vídeo, galeria, tela cheia e download; peças em `public/divulgacao/`; versão 4.
+
+### 7. Rótulo conferido com foto real (09/11)
+- Textos, teor, cores e amora do rótulo do Blackberry iguais à garrafa vendida no Brasil; versão 5.
 
 ---
 

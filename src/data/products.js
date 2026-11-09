@@ -122,7 +122,7 @@ export const PRODUCTS = [
     badge: 'Lançamento 2026',
     tagline: 'O clássico Jack com o toque da amora-preta.',
     description:
-      'Começa no Old No. 7 — o Tennessee Whiskey de 80% milho, 12% cevada maltada e 8% centeio, suavizado gota a gota no carvão de bordo — e recebe um licor de amora-preta antes do engarrafamento, a 35% vol. O rótulo o define como "Blackberry liqueur blended with Jack Daniel\'s Tennessee Whiskey". A marca descreve o sabor como "doce e levemente ácido": amora madura na frente, baunilha, caramelo e carvalho tostado do Jack ao fundo.',
+      'Começa no Old No. 7 — o Tennessee Whiskey de 80% milho, 12% cevada maltada e 8% centeio, suavizado gota a gota no carvão de bordo — e recebe um licor de amora-preta antes do engarrafamento, a 35% vol. O rótulo vendido no Brasil o define como "Blackberry liqueur from the makers of Jack Daniel\'s Tennessee Whiskey". A marca descreve o sabor como "doce e levemente ácido": amora madura na frente, baunilha, caramelo e carvalho tostado do Jack ao fundo.',
     quote: {
       text: 'Ao adicionar as notas maduras de amora-preta, criamos um destilado acessível, cheio de personalidade, fácil de apreciar com os amigos e perfeito para qualquer estação.',
       author: 'Chris Fletcher, master distiller da Jack Daniel Distillery (tradução livre)',
@@ -133,8 +133,9 @@ export const PRODUCTS = [
     proof: 70,
     origin: 'Lynchburg, Tennessee · EUA',
     sizes: [
-      { ml: 1000, label: '1 L', labelText: '1L', price: 'R$ 184,90' },
-      { ml: 700, label: '700 ml', labelText: '700ML', price: 'R$ 149,90' },
+      // grafia do rótulo brasileiro (foto da garrafa: "35% Vol. 1 LITRE")
+      { ml: 1000, label: '1 L', labelText: '1 LITRE', price: 'R$ 184,90' },
+      { ml: 700, label: '700 ml', labelText: '70 cl', price: 'R$ 149,90' },
     ],
     priceNote: 'Preço sugerido pela marca no lançamento no Brasil; pode variar por loja.',
     availability: 'Distribuição inicial no Brasil: SP, PR, SC e RS',
@@ -146,17 +147,26 @@ export const PRODUCTS = [
     // cores amostradas da foto do produto
     liquid: { color: '#d4621a', tint: '#fff1e6' },
     cap: { color: '#0a0a0a', top: '#e0c27f', topMetal: true, ring: '#e0c27f' },
+    // conferido com foto da garrafa vendida no Brasil (09/11/2026)
     design: {
       bg: ['#6e2586', '#4f155f'],
-      ink: '#fbf2fb',
+      ink: '#f3e9da', // creme, como na foto
       foil: 'gold',
-      wordmarkFill: '#ffffff',
+      wordmarkFill: '#f1e6d2',
+      wordmarkScaleX: 0.78, // na foto a marca é mais larga e baixa que no Old No. 7
+      wordmarkY: 0.214,
       icon: 'blackberry',
+      iconFill: '#dcbc70', // amora impressa em dourado claro, drupas separadas pelo roxo
       script: 'Tennessee',
       title: 'BLACKBERRY',
+      titleMark: '®',
       kicker: 'ORIGINAL RECIPE',
-      lines: ['BLACKBERRY LIQUEUR', "BLENDED WITH JACK DANIEL'S", 'TENNESSEE WHISKEY'],
-      abv: '35% Alc/Vol  70 Proof',
+      kickerFill: '#d6b265',
+      kickerSize: 50,
+      lines: ['BLACKBERRY LIQUEUR', "FROM THE MAKERS OF JACK DANIEL'S", 'TENNESSEE WHISKEY'],
+      abv: '35% Vol.',
+      abvKeepCase: true,
+      abvSize: 62,
       neckBg: '#712a8a',
       paperBack: '#cfc3d8',
     },
@@ -274,7 +284,7 @@ export const PRODUCTS = [
     hotspots: familyHotspots({
       cap: { title: 'Tampa de rosca', text: 'Tampa preta serrilhada com anel e topo dourados, que acompanham a paleta roxo e ouro da edição. Feche bem após o uso e guarde a garrafa em pé.' },
       neck: { text: 'Colarinho roxo com filetes dourados, a assinatura Jack Daniel\'s e o ícone da amora-preta.' },
-      label: { title: 'Rótulo roxo "Original Recipe"', text: 'Mantém o layout clássico da marca em roxo: "Jack Daniel\'s" em arco, "Tennessee Blackberry", e a descrição "Blackberry liqueur blended with Jack Daniel\'s Tennessee Whiskey · 35% Alc/Vol (70 Proof)". Nas laterais: "Jack Daniel Distillery" e "Quality & Craftsmanship".' },
+      label: { title: 'Rótulo roxo "Original Recipe"', text: 'Mantém o layout clássico da marca em roxo: "Jack Daniel\'s" em arco, "Tennessee Blackberry", e a descrição "Blackberry liqueur from the makers of Jack Daniel\'s Tennessee Whiskey · 35% Vol.". Nas laterais: "Jack Daniel Distillery" e "Quality & Craftsmanship".' },
       liquid: { text: 'Âmbar acobreado e brilhante: a cor do whiskey maturado em barris novos de carvalho tostado, somada ao licor de amora-preta.' },
       base: { text: 'Garrafa quadrada clássica de faces planas e cantos chanfrados, adotada pela marca em 1895. A base espessa de vidro dá peso e estabilidade.' },
     }),
